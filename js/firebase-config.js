@@ -1,9 +1,8 @@
-// IDE illeszd be a Firebase projekt adatait (Project settings → Your apps → Web app → firebaseConfig).
 export const firebaseConfig = {
-  apiKey: "IDE_ILLESZD",
-  authDomain: "PROJEKT.firebaseapp.com",
-  projectId: "PROJEKT",
-  storageBucket: "PROJEKT.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "0:000000000000:web:0000000000000000"
+  apiKey: "AIzaSyAh64WWEaIAhf_z9ZQRHiJ_XZNHmCw9jRg",
+  authDomain: "vikinggold-4ef10.firebaseapp.com",
+  projectId: "vikinggold-4ef10",
+  storageBucket: "vikinggold-4ef10.firebasestorage.app",
+  messagingSenderId: "1001473918567",
+  appId: "1:1001473918567:web:0e3bb1720ff1262e00f6c2"
 };
