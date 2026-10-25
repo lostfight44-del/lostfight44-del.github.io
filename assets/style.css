@@ -142,3 +142,22 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .pickprev b{color:var(--gold2)}
 .hint{font-size:.8rem;color:var(--mu);margin:30px 0 0;line-height:1.5}
 @media(max-width:700px){.hint{margin-top:8px}.g3>[style*="span 2"]{grid-column:auto!important}}
+/* ===== v4 kiegészítések: színezett tippsorok, táblázat, tagkezelés ===== */
+.tl{padding:14px 14px;margin:0 -14px;border-radius:12px;border-bottom:0;position:relative}
+.tl::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:1px;background:var(--bd)}
+.tl:last-child::after{display:none}
+.tl.st-win{background:linear-gradient(90deg,rgba(34,197,94,.16),rgba(34,197,94,.04) 75%);box-shadow:inset 3px 0 0 var(--ok)}
+.tl.st-loss{background:linear-gradient(90deg,rgba(255,84,104,.24),rgba(255,84,104,.07) 75%);box-shadow:inset 3px 0 0 var(--bad)}
+.tl.st-void{background:linear-gradient(90deg,rgba(138,147,168,.12),transparent 75%);box-shadow:inset 3px 0 0 var(--mu2)}
+.tl.st-loss .tn{color:#ffb4bd}.tl.st-win .tn{color:#b7f3cb}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
+th{color:var(--gold);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase}
+tbody tr:hover td{background:rgba(255,255,255,.03)}
+td.acts{display:flex;gap:6px;flex-wrap:wrap}
+.pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:.74rem;font-weight:700;background:rgba(245,184,61,.1);border:1px solid rgba(245,184,61,.4);color:var(--gold2)}
+.pill.g{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.45);color:#86efac}.pill.y{background:rgba(245,184,61,.1);border-color:rgba(245,184,61,.45);color:#fcd34d}.pill.r{background:rgba(255,84,104,.1);border-color:rgba(255,84,104,.5);color:#fda4af}.pill.v{background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.5);color:#d8b4fe}
+.btn.danger{background:linear-gradient(120deg,#be123c,#ff5468);color:#fff!important}
+.card h2{font-size:1.05rem;margin:0 0 14px}
+@media(max-width:640px){.tl{margin:0 -10px;padding:14px 10px}}
