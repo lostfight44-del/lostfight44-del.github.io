@@ -34,7 +34,7 @@ function layout() {
   const nav = [['home', 'index.html', 'Kezdőlap'], ['tippek', 'tippek.html', 'Tippek'], ['contact', 'elerhetosegek.html', 'Elérhetőségek']];
   $('#hdr').innerHTML = `
 <header class="top">
-  <a class="logo" href="index.html" aria-label="VikingGOLD"><span class="mark"><svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".55" stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs><path d="M24 3 42 10v14c0 10-7.5 17.5-18 21C13.5 41.5 6 34 6 24V10z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M14 16l10 18 10-18" fill="none" stroke="url(#lg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="wm">Viking<b>GOLD</b></span></a>
+  <a class="logo" href="index.html" aria-label="VikingGOLD"><span class="mark"><svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdc82"/><stop offset=".55" stop-color="#f5b83d"/><stop offset="1" stop-color="#d98e0b"/></linearGradient></defs><path d="M24 3 42 10v14c0 10-7.5 17.5-18 21C13.5 41.5 6 34 6 24V10z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M14 16l10 18 10-18" fill="none" stroke="url(#lg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="wm">Viking<b>GOLD</b></span></a>
   <button class="burger" id="burger" aria-label="Menü" aria-expanded="false"><i></i><i></i><i></i></button>
   <nav class="nav" id="nav">${nav.map(([k, h, l]) => `<a href="${h}" class="${page === k ? 'on' : ''}">${l}</a>`).join('')}</nav>
   <div class="usr" id="usr"><button class="uic" id="uic" aria-haspopup="true" aria-expanded="false" aria-label="Fiók"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>${user ? '<i class="dot"></i>' : ''}</button>
@@ -51,9 +51,6 @@ function layout() {
   const lo = $('#logout'); if (lo) lo.onclick = async e => { e.preventDefault(); await signOut(auth); flashNext('Sikeresen kijelentkeztél.'); location.href = 'index.html'; };
 }
 
-function setupBanner() {
-  $('#main').innerHTML = `<section class="wrap narrow"><div class="panel center" style="margin-top:50px"><h1>Beállítás szükséges</h1><p class="small" style="font-size:.95rem">Töltsd ki a <b>js/firebase-config.js</b> fájlt a Firebase projekt adataival. A lépések a README.txt-ben vannak.</p></div></section>`;
-}
 
 
 /* ---------- közös ---------- */
@@ -198,7 +195,7 @@ function tippekPage() {
     const me = ADMIN_NAMES.find(n => n.toLowerCase() === (user.displayName || '').toLowerCase()) || ADMIN_NAMES[0];
     const f = t || { sport: st.s, date: curDate(), tipster: me, status: 'pend' };
     const v = k => esc(f[k] ?? '');
-    $('#formBox').innerHTML = `<div class="panel" style="border-color:rgba(99,102,241,.6)"><h2 style="font-size:1.2rem">${t ? 'Tipp szerkesztése' : 'Új tipp feltöltése'}</h2><form id="tf">
+    $('#formBox').innerHTML = `<div class="panel" style="border-color:rgba(245,184,61,.5)"><h2 style="font-size:1.2rem">${t ? 'Tipp szerkesztése' : 'Új tipp feltöltése'}</h2><form id="tf">
     <div class="g3"><div><label>Sportág</label><select id="f_sport">${SPORTS.map(([k, n]) => `<option value="${k}" ${sportOf(f) === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div><label>Dátum</label><input type="date" id="f_date" required value="${v('date')}"></div><div><label>Kezdés <span class="opt">(opc.)</span></label><input type="time" id="f_time" value="${v('time')}"></div></div>
     <div class="g2"><div><label>Hazai csapat / játékos</label><input id="f_home" required maxlength="60" value="${v('home')}"></div><div><label>Vendég csapat / játékos</label><input id="f_away" required maxlength="60" value="${v('away')}"></div></div>
     <div class="g3"><div><label>Bajnokság <span class="opt">(opc.)</span></label><input id="f_league" maxlength="60" value="${v('league')}"></div><div><label>Tipp</label><input id="f_pick" required maxlength="80" placeholder="pl. Hazai győzelem" value="${v('pick')}"></div><div><label>Szorzó</label><input id="f_odds" inputmode="decimal" placeholder="1.85" value="${v('odds')}"></div></div>
