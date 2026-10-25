@@ -268,16 +268,29 @@ function tippekPage() {
     }).join('') : `<div class="empty">Ehhez a sportághoz erre a napra még nincs tipp.${admin ? ' A „+ Új tipp” gombbal tölthetsz fel egyet.' : ' Nézz vissza később!'}</div>`;
     if (!admin) return;
     $('#tlist').querySelectorAll('.rb').forEach(i => {
-      i.onkeydown = e => { if (e.key === 'Enter') i.blur(); };
-      i.onblur = async () => {
+      i._saved = (all.find(x => x.id === i.dataset.id) || {}).result || '';
+      const save = async () => {
+        clearTimeout(i._tm);
         const t = all.find(x => x.id === i.dataset.id), val = i.value.trim();
-        if (t && (t.result || '') !== val) {
-          const upd = { result: val };
-          if (t.mk) { if (!val) upd.status = 'pend'; else { const r = evalTip({ ...t, result: val }); if (r) upd.status = r; } }   // az eredményből eldönti: nyert / vesztett / érvénytelen
-          try { await updateDoc(doc(db, 'tips', t.id), upd); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
-        }
-        if (pending) setTimeout(list, 0);
+        if (!t || val === i._saved) return;
+        const upd = { result: val };
+        if (t.mk) { if (!val) upd.status = 'pend'; else { const r = evalTip({ ...t, sport: sportOf(t), result: val }); upd.status = r || 'pend'; } }   // az eredményből eldönti: nyert / vesztett / érvénytelen
+        i._saved = val;
+        try { await updateDoc(doc(db, 'tips', t.id), upd); } catch (x) { i._saved = ''; toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
       };
+      i.oninput = () => {   // gépelés közben azonnal frissül a sor (zöld / piros), mentés kis késéssel
+        const t = all.find(x => x.id === i.dataset.id); if (!t) return;
+        const val = i.value.trim();
+        t.result = val;
+        if (t.mk) t.status = val ? (evalTip({ ...t, sport: sportOf(t), result: val }) || 'pend') : 'pend';
+        const row = i.closest('.tl'), s = effStatus(t);
+        row.className = 'tl st-' + s;
+        const ib = row.querySelector('.icb'); if (ib) ib.innerHTML = ICON[s];
+        $('#tsum').innerHTML = summary(matches());
+        clearTimeout(i._tm); i._tm = setTimeout(save, 600);
+      };
+      i.onkeydown = e => { if (e.key === 'Enter') i.blur(); };
+      i.onblur = async () => { await save(); if (pending) setTimeout(list, 0); };
     });
     $('#tlist').querySelectorAll('[data-cy]').forEach(b => b.onclick = async () => { const t = all.find(x => x.id === b.dataset.cy); try { await updateDoc(doc(db, 'tips', t.id), { status: NEXT[effStatus(t)] }); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } });
     $('#tlist').querySelectorAll('[data-del]').forEach(a => a.onclick = async e => { e.preventDefault(); if (!confirm('Biztosan törlöd ezt a tippet?')) return; try { await deleteDoc(doc(db, 'tips', a.dataset.del)); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } });
