@@ -178,3 +178,33 @@ tr:hover td{background:rgba(99,102,241,.07)}
 .foot .fl{display:flex;gap:16px;align-items:flex-start}
 @media(max-width:640px){.foot .wrap{grid-template-columns:1fr}}
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s,transform .7s}.reveal.in{opacity:1;transform:none}
+
+/* ===== v2: sportágak, tipp-napló, játékosok ===== */
+.sports{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.sp{display:flex;flex-direction:column;align-items:center;gap:4px;padding:22px 10px;border-radius:14px;border:1px solid var(--bd);background:linear-gradient(180deg,rgba(18,28,54,.8),rgba(8,13,28,.8));color:var(--tx)!important;text-decoration:none!important;transition:.25s}
+.sp:hover{transform:translateY(-4px);border-color:var(--c2);box-shadow:0 12px 30px rgba(99,102,241,.3)}
+.sp .e{font-size:2.2rem}.sp small{color:var(--c1);font-weight:700}
+@media(max-width:800px){.sports{grid-template-columns:repeat(2,1fr)}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:6px 13px;border-radius:999px;border:1px solid var(--bd);background:rgba(10,16,32,.8);font-weight:600;font-size:.9rem}
+.chip i{font-style:normal;font-size:.7rem;font-weight:800;color:var(--c3);margin-left:4px;text-transform:uppercase;letter-spacing:.05em}
+.chip.adm{border-color:rgba(168,85,247,.6);background:rgba(168,85,247,.1)}
+.tabs a small{opacity:.7;margin-left:3px;font-weight:700}
+.vtabs{margin-top:-8px}.vtabs a{padding:8px 14px;font-size:.9rem}
+.tlog{border-radius:14px;border:1px solid var(--bd);background:rgba(8,13,28,.82);padding:6px 18px 10px;margin-bottom:20px}
+.tlh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 0 12px;border-bottom:1px solid var(--bd)}
+.tlh span{border-left:3px solid var(--bad);padding-left:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:.85rem;color:#cbd5e1}
+.tlh small{color:var(--mu)}
+.tl{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(26,37,64,.9);animation:pop .3s both}
+.tl:last-child{border-bottom:0}
+.tn{font-size:1rem;font-weight:600}
+.ts{font-size:.8rem;color:var(--mu);margin-top:3px}.ts b{color:#cbd5e1}.ts .tp{color:var(--c1)}.ts .lg{color:var(--c1);font-weight:700}.ts .od{color:var(--warn);font-weight:700}
+.tag{font-style:normal;font-size:.65rem;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(168,85,247,.2);color:#d8b4fe;text-transform:uppercase}
+.tlr{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.rb{width:72px!important;padding:8px 10px!important;text-align:center;border-radius:999px!important;font-weight:700}
+.rb.ro{display:inline-block;border:1px solid var(--bd);background:var(--in);color:var(--tx)}.rb.ro.e{color:#4b5878}
+.ic{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:4px;font-size:.8rem;font-weight:900;line-height:1}
+.ic.win{background:#34d399;color:#05140d}.ic.loss{background:none;color:var(--bad);font-size:1.2rem}.ic.pend,.ic.void{background:none;font-size:1rem}.ic.ot{background:none;font-size:1rem}
+.icb{background:none;border:0;padding:0;cursor:pointer}
+.ra{color:var(--bad);font-weight:700;font-size:.9rem;white-space:nowrap}
+@media(max-width:640px){.tl{flex-direction:column;align-items:flex-start}.tlr{flex-wrap:wrap}}
