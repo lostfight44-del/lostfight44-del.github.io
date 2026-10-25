@@ -1,7 +1,14 @@
-import { firebaseConfig } from './firebase-config.js';
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import { getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+/*BOOT_START*/
+let firebaseConfig, initializeApp, getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut;
+let getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, where, orderBy, limit, serverTimestamp;
+let bootError = null;
+try {
+  ({ firebaseConfig } = await import('./firebase-config.js'));
+  ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'));
+  ({ getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'));
+  ({ getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, where, orderBy, limit, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'));
+} catch (e) { bootError = e; }
+/*BOOT_END*/
 
 const MAIL = '@vikinggold.local', SUF = '·VG!';          // Firebase min. 6 karakteres jelszót kér, ezért kerül a jelszó mögé egy fix végződés
 const ADMIN_NAMES = ['_notryn', 'Kriszhhh'];                 // admin = tippadó
@@ -16,7 +23,7 @@ const MONTHS = ['', 'január', 'február', 'március', 'április', 'május', 'j�
 const huDate = s => { const d = new Date(s + 'T12:00:00'); return isNaN(d) ? s : `${d.getFullYear()}. ${MONTHS[d.getMonth() + 1]} ${d.getDate()}., ${DAYS[d.getDay()]}`; };
 const page = document.body.dataset.page;
 const params = new URLSearchParams(location.search);
-const configured = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('IDE_');
+const configured = !bootError && !!firebaseConfig && !!firebaseConfig.apiKey && !String(firebaseConfig.apiKey).startsWith('IDE_');
 
 let app, auth, db, user = null;
 const isAdmin = () => !!user && ADMIN_EMAILS.includes(user.email);
@@ -269,7 +276,10 @@ function start(u) {
   if (page !== 'tippek') showStoredFlash();
 }
 
-if (!configured) { layout(); setupBanner(); }
+if (bootError) {
+  layout();
+  $('#main').innerHTML = `<section class="wrap narrow"><div class="panel center" style="margin-top:50px"><h1>Betöltési hiba</h1><p class="small" style="font-size:.95rem">Az oldal egy szükséges fájlt nem tudott betölteni. Valószínűleg a <b>js/firebase-config.js</b> hiányzik, vagy hibás a tartalma (az első sorának ez kell lennie: <code>export const firebaseConfig = {</code>).</p><p class="small" style="word-break:break-word;color:var(--bad)">${esc(String(bootError && bootError.message || bootError))}</p></div></section>`;
+} else if (!configured) { layout(); setupBanner(); }
 else {
   app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
   setPersistence(auth, browserSessionPersistence).catch(() => { }).finally(() => {
