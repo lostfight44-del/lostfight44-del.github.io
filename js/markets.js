@@ -86,6 +86,36 @@ function parseResult(sport, str) {
 }
 const cmp = (v, line, over) => v === line ? 'void' : ((v > line) === over ? 'win' : 'loss');
 
+
+/* Ha a tipp nem a piac-választóval készült (régi vagy szabad szöveg), a tipp szövegéből próbáljuk kitalálni a piacot:
+   "Összesen 4,5 gól felett", "X nyer", "Döntetlen", "Mindkét csapat szerez gólt: igen" stb. */
+export function inferTip(t) {
+  const p = String(t.pick || '').trim(); if (!p) return null;
+  const sport = t.sport || 'jegkorong', low = x => String(x || '').trim().toLowerCase();
+  const num = x => parseFloat(String(x).replace(',', '.'));
+  let m;
+  if ((m = p.match(/^mindkét csapat szerez gólt:?\s*(igen|nem)/i))) return { mk: 'btts', sd: low(m[1]) === 'igen' ? 'y' : 'n' };
+  if ((m = p.match(/^(over|under|felett|alatt)\s*(\d+(?:[.,]\d+)?)/i))) return { mk: 'tot', sd: /^(over|felett)/i.test(m[1]) ? 'o' : 'u', ln: num(m[2]) };
+  if ((m = p.match(/(\d+(?:[.,]\d+)?)\s*(?:gól|pont|gém|szett)?\s*(felett|alatt)/i))) {
+    const before = p.slice(0, m.index).trim().replace(/[:\-–]\s*$/, '').trim().toLowerCase();
+    const o = m[2].toLowerCase() === 'felett' ? 'o' : 'u', ln = num(m[1]);
+    if (!before || before === 'összesen' || before === 'összes') return { mk: 'tot', sd: o, ln };
+    if (before === low(t.home) || before === 'hazai') return { mk: 'tth', sd: o, ln };
+    if (before === low(t.away) || before === 'vendég') return { mk: 'tta', sd: o, ln };
+    return { mk: 'tot', sd: o, ln };
+  }
+  if (/^döntetlen$/i.test(p)) return { mk: '1x2', sd: 'x' };
+  if ((m = p.match(/^(.+?)\s+nyer\b(.*)$/i))) {
+    const n = low(m[1]), side = n === low(t.home) || n === 'hazai' ? 'h' : n === low(t.away) || n === 'vendég' ? 'a' : null;
+    if (!side) return null;
+    if (/döntetlen esetén nincs tét/i.test(m[2])) return { mk: 'dnb', sd: side };
+    if (sport === 'kosarlabda' || sport === 'tenisz') return { mk: 'ml', sd: side };
+    if (sport === 'jegkorong') return /hosszab/i.test(m[2]) ? { mk: 'ml', sd: side } : { mk: '1x2', sd: side };
+    return { mk: '1x2', sd: side };
+  }
+  return null;
+}
+
 /* jégkorong: hosszabbítás / szétlövés jelölése az eredményben, pl. "4-3 ot" vagy "3-2 so" */
 export const otFlag = s => /(?:^|[^a-zA-Z])(ot|so|sp|szl|hn|hosszab\w*|szétl\w*)(?![a-zA-Z])/i.test(String(s || ''));
 
@@ -93,7 +123,8 @@ export const otFlag = s => /(?:^|[^a-zA-Z])(ot|so|sp|szl|hn|hosszab\w*|szétl\w*
    Jégkorongnál a "Győztes" piac a végeredményt nézi, a többi (1X2, hendikep, gól stb.) a 60 perces állást:
    ha az eredmény mellé írod, hogy ot / so, a 60 perces állás döntetlen. */
 export function evalTip(t) {
-  if (!t || !t.mk || !t.sd) return null;
+  if (!t) return null;
+  if (!t.mk || !t.sd) { const g = inferTip(t); if (!g) return null; t = { ...t, ...g }; }
   const sport = t.sport || 'jegkorong';
   const r = parseResult(sport, t.result); if (!r) return null;
   const ln = Number(t.ln), over = t.sd === 'o';
