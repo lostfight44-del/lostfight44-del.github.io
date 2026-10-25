@@ -12,7 +12,7 @@ try {
 } catch (e) { bootError = e; }
 /*BOOT_END*/
 
-const ADMIN_NAMES = ['_Notryn', 'Kriszhhh'];                 // foglalt (admin) nevek: aki ezeket elsőként regisztrálja, az lesz az admin = tippadó
+const ADMIN_NAMES = ['_notryn', 'Kriszhhh'];                 // foglalt (admin) nevek: aki ezeket elsőként regisztrálja, az lesz az admin = tippadó
 const RESERVED = ADMIN_NAMES.map(n => n.toLowerCase());
 const isReserved = n => RESERVED.includes(String(n || '').toLowerCase());
 let ADMIN_SET = new Set(RESERVED);                          // az admin fiókok (nevek), a Firestore "admins" gyűjteményből töltődik
@@ -74,6 +74,31 @@ const NEXT = { pend: 'win', win: 'loss', loss: 'void', void: 'pend' };
 const ICON = { win: '<span class="ic win" title="Nyert">✔</span>', loss: '<span class="ic loss" title="Vesztett">✕</span>', void: '<span class="ic void" title="Érvénytelen">↩</span>', pend: '<span class="ic pend" title="Függőben">⏳</span>' };
 /* a tipp tényleges állapota: ha van végeredmény és még "függőben", a rendszer magától eldönti (nyert / vesztett / érvénytelen) */
 const effStatus = t => { const s = t.status || 'pend'; if (s !== 'pend') return s; return (t.mk && t.result && evalTip({ ...t, sport: sportOf(t) })) || 'pend'; };
+/* összegzés a listázott tippekről: állások, találati arány, kombi szorzat, 1 egységes tét eredménye */
+function summary(l) {
+  if (!l.length) return '';
+  let w = 0, ls = 0, v = 0, p = 0, comb = 1, combN = 0, oddsSum = 0, oddsN = 0, profit = 0, staked = 0;
+  l.forEach(t => {
+    const s = effStatus(t), o = Number(t.odds) > 1 ? Number(t.odds) : 0;
+    if (s === 'win') w++; else if (s === 'loss') ls++; else if (s === 'void') v++; else p++;
+    if (o) { oddsSum += o; oddsN++; }
+    if (o && s !== 'void') { comb *= o; combN++; }
+    if (o && s === 'win') { profit += o - 1; staked++; } else if (o && s === 'loss') { profit -= 1; staked++; }
+  });
+  const dec = w + ls, rate = dec ? Math.round(w / dec * 100) : null;
+  const kstat = ls ? 'loss' : p ? 'pend' : combN ? 'win' : 'pend';
+  const kLab = { win: 'a kombi nyert', loss: 'a kombi elbukott', pend: 'még függőben' }[kstat];
+  const f2 = n => n.toFixed(2).replace('.', ',');
+  const box = (a, b, c = '') => `<div class="sbx ${c}"><b>${a}</b><span>${b}</span></div>`;
+  return `<div class="sumbar">
+    ${box(l.length, 'tipp')}
+    ${box(`<i class="g">${w}</i> / <i class="r">${ls}</i>${v ? ` / ${v}` : ''}${p ? ` / <em>${p}</em>` : ''}`, `nyert / vesztett${v ? ' / érvénytelen' : ''}${p ? ' / függő' : ''}`)}
+    ${box(rate == null ? '–' : rate + '%', 'találati arány')}
+    ${box(oddsN ? f2(oddsSum / oddsN) : '–', 'átlag szorzó')}
+    ${box(combN ? f2(comb) : '–', 'összes szorzat (kombi)', combN ? 'k-' + kstat : '')}
+    ${box(staked ? (profit >= 0 ? '+' : '−') + f2(Math.abs(profit)) : '–', 'eredmény (1 egység / tipp)', staked ? (profit >= 0 ? 'k-win' : 'k-loss') : '')}
+  </div>${combN > 1 ? `<p class="sumnote">Ha mindet egy szelvényen játszanád: ${f2(comb)}-szeres szorzó, ${kLab}.</p>` : ''}`;
+}
 const watchUsers = cb => onSnapshot(collection(db, 'users'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => cb(null));
 
 function setupBanner() {
@@ -214,7 +239,7 @@ function tippekPage() {
   <div class="tabs vtabs" id="vTabs"></div>
   <div class="row" id="dRow" style="margin:-6px 0 14px" hidden><input id="dpick" type="date" style="max-width:200px" aria-label="Dátum választása"></div>
   <div id="formBox"></div>
-  <div class="tlog"><div class="tlh"><span>Tippek és eredmények</span><small id="tlSub"></small></div><div id="tlist"><div class="empty">Betöltés…</div></div></div>
+  <div class="tlog"><div class="tlh"><span>Tippek és eredmények</span><small id="tlSub"></small></div><div id="tsum"></div><div id="tlist"><div class="empty">Betöltés…</div></div></div>
   </section>`;
   showStoredFlash();
 
@@ -237,6 +262,7 @@ function tippekPage() {
     if (ae && ae.classList && ae.classList.contains('rb') && $('#tlist').contains(ae)) { pending = true; return; }   // gépelés közben nem frissítjük
     pending = false;
     const l = matches();
+    $('#tsum').innerHTML = summary(l);
     $('#tlSub').textContent = (st.v === 'all' ? 'összes nap' : huDate(curDate())) + ' · ' + l.length + ' tipp';
     $('#tlist').innerHTML = l.length ? l.map(t => {
       const s = effStatus(t), ot = sportOf(t) === 'jegkorong' && otFlag(t.result);
@@ -281,7 +307,7 @@ function tippekPage() {
     <div class="g3"><div><label>Piac</label><select id="f_mk"></select></div><div id="f_sdbox"><label>Kimenet</label><select id="f_sd"></select></div><div id="f_lnbox"><label>Vonal <span class="opt" id="f_lnhint"></span></label><input id="f_ln" list="dlLines" inputmode="decimal" placeholder="pl. 2.5"></div><div id="f_frbox" hidden style="grid-column:span 2"><label>Tipp szövege</label><input id="f_free" maxlength="80"></div></div>
     <div class="pickprev" id="f_prev"></div>
     <div class="g3"><div><label>Szorzó <span class="opt">(opc.)</span></label><input id="f_odds" inputmode="decimal" placeholder="1.85" value="${v('odds')}"></div><div><label>Tippadó</label><select id="f_tipster">${[...new Set([...(f.tipster ? [f.tipster] : []), ...tipsters])].map(n => `<option ${(f.tipster || me) === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div><div><label>Végeredmény <span class="opt">(opc.)</span></label><input id="f_result" maxlength="30" placeholder="3-2" value="${v('result')}"></div></div>
-    <div class="g3"><div><label>Állapot</label><select id="f_status">${Object.entries(LAB).map(([k, n]) => `<option value="${k}" ${(f.status || 'pend') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div style="grid-column:span 2"><p class="hint">Ha megadsz végeredményt, a nyert / vesztett / érvénytelen állapotot a rendszer a fő tippből magától eldönti (pl. 4,5 felett + 1-4 = nyert). Jégkorongnál hosszabbításnál / szétlövésnél írd az eredmény mellé: 4-3 ot vagy 3-2 so (a 60 perces piacoknál ilyenkor döntetlen az állás). Tenisznél szettek: 2-1, vagy szettenként: 6-4 3-6 7-5.</p></div></div>
+    <div class="g3"><div><label>Állapot <span class="opt">(nem kell állítani)</span></label><select id="f_status">${Object.entries(LAB).map(([k, n]) => `<option value="${k}" ${(f.status || 'pend') === k ? 'selected' : ''}>${k === 'pend' ? 'Automatikus (a végeredményből)' : n + ' (kézi)'}</option>`).join('')}</select></div><div style="grid-column:span 2"><p class="hint">Ha megadsz végeredményt, a nyert / vesztett / érvénytelen állapotot a rendszer a fő tippből magától eldönti (pl. 4,5 felett + 1-4 = nyert). Jégkorongnál hosszabbításnál / szétlövésnél írd az eredmény mellé: 4-3 ot vagy 3-2 so (a 60 perces piacoknál ilyenkor döntetlen az állás). Tenisznél szettek: 2-1, vagy szettenként: 6-4 3-6 7-5.</p></div></div>
     <div class="row" style="margin-top:18px"><button class="btn" type="submit">Mentés</button><button class="btn ghost" type="button" id="fcancel">Mégse</button></div></form></div>`;
     const E = id => $('#' + id), sport = () => E('f_sport').value;
     const leaguesOf = () => LG[sport()] || [];
