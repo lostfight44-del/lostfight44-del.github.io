@@ -1,0 +1,109 @@
+/* VikingGOLD – fogadási piacok, tipp-szöveg építés és automatikus kiértékelés */
+const range = (a, b, st = 1) => { const r = []; for (let x = a; x <= b + 1e-9; x += st) r.push(Math.round(x * 100) / 100); return r; };
+const UNIT = { labdarugas: 'gól', jegkorong: 'gól', kezilabda: 'gól', kosarlabda: 'pont', tenisz: 'gém' };
+const HOME = 'Hazai', AWAY = 'Vendég';
+
+const BASE = {
+  '1x2': { l: 'Mérkőzés végeredmény (1X2)', s: [['h', 'Hazai nyer'], ['x', 'Döntetlen'], ['a', 'Vendég nyer']] },
+  dc: { l: 'Kettős esély', s: [['1x', 'Hazai vagy döntetlen (1X)'], ['x2', 'Vendég vagy döntetlen (X2)'], ['12', 'Nincs döntetlen (12)']] },
+  dnb: { l: 'Döntetlen esetén nincs tét', s: [['h', 'Hazai nyer'], ['a', 'Vendég nyer']] },
+  ml: { l: 'Győztes', s: [['h', 'Hazai nyer'], ['a', 'Vendég nyer']] },
+  hcp: { l: 'Hendikep', s: [['h', 'Hazai'], ['a', 'Vendég']], line: 'signed' },
+  tot: { l: 'Összes gól', s: [['o', 'Felett'], ['u', 'Alatt']], line: 'pos' },
+  tth: { l: 'Hazai csapat gólja', s: [['o', 'Felett'], ['u', 'Alatt']], line: 'pos' },
+  tta: { l: 'Vendég csapat gólja', s: [['o', 'Felett'], ['u', 'Alatt']], line: 'pos' },
+  btts: { l: 'Mindkét csapat szerez gólt', s: [['y', 'Igen'], ['n', 'Nem']] },
+  oe: { l: 'Összes gól páros / páratlan', s: [['odd', 'Páratlan'], ['even', 'Páros']] },
+  shcp: { l: 'Szett hendikep', s: [['h', 'Hazai'], ['a', 'Vendég']], line: 'signed' },
+  stot: { l: 'Összes szett', s: [['o', 'Felett'], ['u', 'Alatt']], line: 'pos' },
+  ghcp: { l: 'Gém hendikep', s: [['h', 'Hazai'], ['a', 'Vendég']], line: 'signed' },
+  gtot: { l: 'Összes gém', s: [['o', 'Felett'], ['u', 'Alatt']], line: 'pos' },
+  free: { l: 'Egyéb (saját szöveg)', s: [], free: true }
+};
+const ORDER = {
+  labdarugas: ['1x2', 'dc', 'dnb', 'hcp', 'tot', 'tth', 'tta', 'btts', 'oe', 'free'],
+  jegkorong: ['1x2', 'dc', 'ml', 'dnb', 'hcp', 'tot', 'tth', 'tta', 'btts', 'oe', 'free'],
+  kezilabda: ['1x2', 'dc', 'dnb', 'hcp', 'tot', 'tth', 'tta', 'oe', 'free'],
+  kosarlabda: ['ml', 'hcp', 'tot', 'tth', 'tta', 'oe', 'free'],
+  tenisz: ['ml', 'shcp', 'stot', 'ghcp', 'gtot', 'free']
+};
+const LABEL = {
+  jegkorong: { ml: 'Győztes (hosszabbítással, szétlövéssel)', '1x2': 'Végeredmény 60 percre (1X2)', dc: 'Kettős esély (60 perc)', dnb: 'Döntetlen esetén nincs tét (60 perc)', hcp: 'Hendikep (60 perc)', tot: 'Összes gól (60 perc)' },
+  kosarlabda: { ml: 'Győztes (hosszabbítással)', hcp: 'Hendikep', tot: 'Összes pont', tth: 'Hazai csapat pontja', tta: 'Vendég csapat pontja', oe: 'Összes pont páros / páratlan' },
+  tenisz: { ml: 'Mérkőzés győztese' }
+};
+const LINES = {
+  labdarugas: { hcp: range(-3, 3, .5), tot: range(.5, 6.5), tth: range(.5, 3.5), tta: range(.5, 3.5) },
+  jegkorong: { hcp: range(-3.5, 3.5, .5), tot: range(2.5, 9.5), tth: range(.5, 5.5), tta: range(.5, 5.5) },
+  kezilabda: { hcp: range(-12.5, 12.5, 1), tot: range(48.5, 66.5), tth: range(22.5, 36.5), tta: range(22.5, 36.5) },
+  kosarlabda: { hcp: range(-20.5, 20.5, 1), tot: range(140.5, 240.5, 1), tth: range(60.5, 125.5, 1), tta: range(60.5, 125.5, 1) },
+  tenisz: { shcp: [-2.5, -1.5, 1.5, 2.5], stot: [2.5, 3.5, 4.5], ghcp: range(-8.5, 8.5, 1), gtot: range(17.5, 40.5, 1) }
+};
+
+export function mktList(sport) {
+  const o = ORDER[sport] || ORDER.labdarugas;
+  return o.map(k => ({ k, ...BASE[k], l: (LABEL[sport] && LABEL[sport][k]) || BASE[k].l }));
+}
+export const mktDef = (sport, k) => mktList(sport).find(m => m.k === k);
+export const lineSuggest = (sport, k) => ((LINES[sport] || {})[k]) || [];
+const unitOf = (sport, k) => k === 'stot' || k === 'shcp' ? 'szett' : k === 'ghcp' || k === 'gtot' ? 'gém' : UNIT[sport] || 'gól';
+const sg = n => (n > 0 ? '+' : n < 0 ? '−' : '') + String(Math.abs(n)).replace('.', ',');
+const ps = n => String(n).replace('.', ',');
+
+export function buildPick({ sport, mk, sd, ln, home, away, free }) {
+  const h = (home || '').trim() || HOME, a = (away || '').trim() || AWAY;
+  const nm = s => s === 'h' ? h : a, u = unitOf(sport, mk);
+  switch (mk) {
+    case '1x2': return sd === 'h' ? `${h} nyer` : sd === 'a' ? `${a} nyer` : 'Döntetlen';
+    case 'dc': return sd === '1x' ? `${h} vagy döntetlen` : sd === 'x2' ? `${a} vagy döntetlen` : `${h} vagy ${a} (nincs döntetlen)`;
+    case 'dnb': return `${nm(sd)} nyer (döntetlen esetén nincs tét)`;
+    case 'ml': return `${nm(sd)} nyer` + (sport === 'jegkorong' ? ' (hosszabbítással is)' : '');
+    case 'hcp': case 'shcp': case 'ghcp': return `${nm(sd)} ${sg(ln)} ${mk === 'shcp' ? 'szett ' : mk === 'ghcp' ? 'gém ' : ''}hendikep`;
+    case 'tot': case 'stot': case 'gtot': return `Összesen ${ps(ln)} ${u} ${sd === 'o' ? 'felett' : 'alatt'}`;
+    case 'tth': return `${h}: ${ps(ln)} ${u} ${sd === 'o' ? 'felett' : 'alatt'}`;
+    case 'tta': return `${a}: ${ps(ln)} ${u} ${sd === 'o' ? 'felett' : 'alatt'}`;
+    case 'btts': return `Mindkét csapat szerez gólt: ${sd === 'y' ? 'igen' : 'nem'}`;
+    case 'oe': return `Összes ${u === 'gém' ? 'pont' : u}: ${sd === 'odd' ? 'páratlan' : 'páros'}`;
+    default: return (free || '').trim();
+  }
+}
+
+/* ---- eredmény értelmezése ---- */
+function parseResult(sport, str) {
+  const s = String(str || '');
+  const all = [...s.matchAll(/(\d+)\s*[-–:]\s*(\d+)/g)].map(m => [+m[1], +m[2]]);
+  if (!all.length) return null;
+  if (sport === 'tenisz') {
+    const setScores = all.length >= 2 || Math.max(...all[0]) > 3;
+    if (setScores) {
+      let sh = 0, sa = 0, gh = 0, ga = 0;
+      all.forEach(([x, y]) => { if (x > y) sh++; else if (y > x) sa++; gh += x; ga += y; });
+      return { h: sh, a: sa, gh, ga };
+    }
+    return { h: all[0][0], a: all[0][1], gh: null, ga: null };
+  }
+  return { h: all[0][0], a: all[0][1] };
+}
+const cmp = (v, line, over) => v === line ? 'void' : ((v > line) === over ? 'win' : 'loss');
+
+/* win | loss | void | null (nem eldönthető automatikusan) */
+export function evalTip(t) {
+  if (!t || !t.mk || !t.sd) return null;
+  const r = parseResult(t.sport, t.result); if (!r) return null;
+  const { h, a } = r, ln = Number(t.ln), over = t.sd === 'o', sum = h + a;
+  switch (t.mk) {
+    case '1x2': return (t.sd === 'h' ? h > a : t.sd === 'a' ? a > h : h === a) ? 'win' : 'loss';
+    case 'dc': return (t.sd === '1x' ? h >= a : t.sd === 'x2' ? a >= h : h !== a) ? 'win' : 'loss';
+    case 'dnb': return h === a ? 'void' : ((t.sd === 'h') === (h > a) ? 'win' : 'loss');
+    case 'ml': return h === a ? null : ((t.sd === 'h') === (h > a) ? 'win' : 'loss');
+    case 'hcp': case 'shcp': { const d = t.sd === 'h' ? h + ln - a : a + ln - h; return d > 0 ? 'win' : d < 0 ? 'loss' : 'void'; }
+    case 'ghcp': { if (r.gh == null) return null; const d = t.sd === 'h' ? r.gh + ln - r.ga : r.ga + ln - r.gh; return d > 0 ? 'win' : d < 0 ? 'loss' : 'void'; }
+    case 'tot': case 'stot': return cmp(sum, ln, over);
+    case 'gtot': return r.gh == null ? null : cmp(r.gh + r.ga, ln, over);
+    case 'tth': return cmp(h, ln, over);
+    case 'tta': return cmp(a, ln, over);
+    case 'btts': return ((h > 0 && a > 0) === (t.sd === 'y')) ? 'win' : 'loss';
+    case 'oe': return ((sum % 2 === 1) === (t.sd === 'odd')) ? 'win' : 'loss';
+    default: return null;
+  }
+}
