@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04060d">
+<title>Kezdőlap | VikingGOLD</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="home">
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="hdr"></div>
+<main id="main">
+<section class="hero wrap">
+  <span class="puck"></span><span class="puck b"></span>
+  <span class="eyebrow">Jégkorong · Statisztika · Elemzés</span>
+  <h1>Okos tippek a <span class="g">jégen</span></h1>
+  <p class="lead">A VikingGOLD statisztikai modellel elemzi a jégkorong-mérkőzéseket: forma, gólátlagok, kapusok, egymás elleni mérleg és piaci szorzók alapján készülnek a tippek.</p>
+  <div class="cta"><a class="btn" href="tippek.html">Mai tippek megtekintése</a><a class="btn ghost" id="ctaReg" href="auth.html?mode=register">Ingyenes regisztráció</a></div>
+</section>
+<section class="wrap">
+  <div class="stats">
+    <div class="stat"><b>📊</b><span>Statisztika</span></div>
+    <div class="stat"><b>🧤</b><span>Kapus-elemzés</span></div>
+    <div class="stat"><b>🛡️</b><span>Kockázati szűrő</span></div>
+    <div class="stat"><b>⚡</b><span>Napi tippek</span></div>
+  </div>
+  <h2 class="sect-t reveal">Miért a <span class="g">VikingGOLD</span>?</h2>
+  <div class="feat">
+    <div class="card reveal"><div class="ic">📊</div><h3>Statisztikai alapok</h3><p class="small" style="font-size:.92rem">Szezon- és formaadatok, gólátlagok, győzelmi arány és tabellahelyezés – súlyozott, egymást ellenőrző jelzésekkel.</p></div>
+    <div class="card reveal"><div class="ic">🧤</div><h3>Kapus és különleges egységek</h3><p class="small" style="font-size:.92rem">A védésszázalék, az emberelőny és az emberhátrány is beleszámít, mert jégkorongban ezek döntenek.</p></div>
+    <div class="card reveal"><div class="ic">🛡️</div><h3>Kockázati szűrő</h3><p class="small" style="font-size:.92rem">Gyanús szorzó-mozgás, fáradtság és hiányzók esetén a rendszer inkább a kihagyást javasolja.</p></div>
+  </div>
+  <div class="banner reveal"><div><h3>A tippek csak tagoknak érhetők el</h3><p>Regisztrálj ingyen, vagy lépj be, és azonnal láthatod a napi és a holnapi tippeket.</p></div><div id="bnRow"></div></div>
+</section>
+</main>
+<div id="ftr"></div>
+<script src="assets/fx.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04060d">
+<title>Elemzés | VikingGOLD</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="elemzes">
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="hdr"></div>
+<main id="main">
+<template id="tpl"><div class="flash ok" role="status">Üdv, _Notryn!</div><section class="wrap" style="padding-top:26px">
+  <div class="row" style="justify-content:space-between">
+    <div><h1 style="margin:0">Jégkorong elemző</h1><p class="small" style="margin:4px 0 0">Csak az admin látja. Töltsd ki az adatokat, az elemző kiszámolja a főtippet és a kockázatot.</p></div>
+    <button type="button" class="btn ghost sm" id="bReset">Új meccs / törlés</button>
+  </div>
+
+  <div class="card" style="margin-top:18px"><h2>Mérkőzés</h2>
+    <div class="g4">
+      <div><label>Hazai csapat</label><input class="f" id="hn" placeholder="pl. Boston Bruins"></div>
+      <div><label>Vendég csapat</label><input class="f" id="an" placeholder="pl. Toronto Maple Leafs"></div>
+      <div><label>Dátum</label><input class="f" id="dt" type="date"></div>
+      <div><label>Kezdés <span class="opt">(helyi idő)</span></label><input class="f" id="tm" type="time"></div>
+    </div>
+    <div class="g4">
+      <div><label>Bajnokság</label>
+        <select class="f" id="ls"><option value="">Válassz / egyéb (kézi)</option>
+        <optgroup label="Észak-Amerika"><option value="NHL|32|6.1">NHL</option><option value="AHL|32|6">AHL</option></optgroup><optgroup label="Európa"><option value="KHL|23|5.4">KHL</option><option value="SHL (svéd)|14|5.3">SHL (svéd)</option><option value="Liiga (finn)|15|5.4">Liiga (finn)</option><option value="DEL (német)|14|5.9">DEL (német)</option><option value="Extraliga (cseh)|14|5.4">Extraliga (cseh)</option><option value="Extraliga (szlovák)|12|5.6">Extraliga (szlovák)</option><option value="National League (svájci)|14|5.7">National League (svájci)</option><option value="ICE Hockey League|13|6">ICE Hockey League</option><option value="Erste Liga|8|6.4">Erste Liga</option><option value="MOL Liga|9|6.6">MOL Liga</option><option value="Egyéb|14|5.8">Egyéb</option></optgroup><optgroup label="Nemzetközi"><option value="Bajnokok Hokiligája|24|5.6">Bajnokok Hokiligája</option><option value="Világbajnokság / válogatott|16|5.7">Világbajnokság / válogatott</option></optgroup>        </select></div>
+      <div><label>Csapatok száma a ligában</label><input class="f" id="nt" inputmode="decimal" placeholder="pl. 32"></div>
+      <div><label>Liga gólátlag <span class="opt">(mindkét csapat)</span></label><input class="f" id="la" inputmode="decimal" placeholder="pl. 6.1"></div>
+      <div><label>Gólvonal (Over/Under)</label>
+        <select class="f" id="line"><option>4.5</option><option>5.5</option><option selected>6.5</option><option>7.5</option></select></div>
+    </div>
+    <div class="g4">
+      <div><label>Piaci kalibráció</label><select class="f" id="cal"><option value="1">Be (statisztika + piac)</option><option value="0">Ki (csak statisztika)</option></select></div>
+      <div><label>Bunda-szűrő szigora</label><select class="f" id="sens"><option value="n">Normál</option><option value="s">Szigorú</option><option value="e">Enyhe</option></select></div>
+    </div>
+  </div>
+
+  <div class="card"><h2>Szűrők és kontextus</h2>
+    <div class="g4">
+      <div><label>Mérkőzés típusa</label><select class="f" id="mt"><option value="b">Alapszakasz</option><option value="p">Rájátszás</option><option value="a">Barátságos / előszezon</option></select></div>
+      <div><label>Hazai: fáradtság</label><select class="f" id="hb"><option value="0">Pihent</option><option value="1">Tegnap is játszott (back-to-back)</option></select></div>
+      <div><label>Vendég: fáradtság</label><select class="f" id="ab"><option value="0">Pihent</option><option value="1">Tegnap is játszott (back-to-back)</option></select></div>
+      <div><label>Hírek / hiányzók</label><select class="f" id="nw"><option value="0">Nincs ismert</option><option value="h">Hazai kulcshiányzók</option><option value="a">Vendég kulcshiányzók</option><option value="b">Mindkét oldalon</option></select></div>
+      <div><label>Hazai kapus</label><select class="f" id="hg"><option value="0">Rendes kezdő</option><option value="1">Tartalék / ismeretlen</option></select></div>
+      <div><label>Vendég kapus</label><select class="f" id="ag"><option value="0">Rendes kezdő</option><option value="1">Tartalék / ismeretlen</option></select></div>
+    </div>
+    <div class="g4"><div><label>Nyitó szorzó: hazai továbbjut <span class="opt">(opc.)</span></label><input class="f" id="n1" inputmode="decimal"></div><div><label>Nyitó szorzó: vendég továbbjut <span class="opt">(opc.)</span></label><input class="f" id="n2" inputmode="decimal"></div></div>
+    <p class="warn" style="margin:8px 0 0">A nyitó és a mostani szorzót összevetve a szűrő a gyanús szorzó-mozgást is észreveszi.</p>
+  </div>
+
+  <div class="g2">
+    <div class="card"><h2>Hazai csapat</h2>
+      <div class="g3"><div><label>Tabellahelyezés</label><input class="f" id="hp" inputmode="decimal"></div><div><label>Lejátszott meccs</label><input class="f" id="hm" inputmode="decimal"></div><div><label>Győzelmek <span class="opt">(hosszabb.-sel)</span></label><input class="f" id="hw" inputmode="decimal"></div></div>
+      <div class="g2"><div><label>Idény: lőtt gól</label><input class="f" id="hgf" inputmode="decimal"></div><div><label>Idény: kapott gól</label><input class="f" id="hga" inputmode="decimal"></div></div>
+      <div class="g2"><div><label>Utolsó 5 HAZAI: lőtt</label><input class="f" id="hs" inputmode="decimal"></div><div><label>Utolsó 5 HAZAI: kapott</label><input class="f" id="hc" inputmode="decimal"></div></div>
+      <div class="g2"><div><label>Forma, utolsó 5 <span class="opt">(Gy/V, opc.)</span></label><input class="f" id="hform" placeholder="pl. GGVGV" autocomplete="off"></div><div><label>Utolsó 5-ből gólvonal felett <span class="opt">(opc.)</span></label><input class="f" id="ho" inputmode="decimal"></div></div>
+      <div class="g3"><div><label>Védés % <span class="opt">(kapus, opc.)</span></label><input class="f" id="hsv" inputmode="decimal" placeholder="91.2"></div><div><label>Emberelőny % <span class="opt">(opc.)</span></label><input class="f" id="hpp" inputmode="decimal" placeholder="21"></div><div><label>Emberhátrány % <span class="opt">(opc.)</span></label><input class="f" id="hpk" inputmode="decimal" placeholder="80"></div></div>
+    </div>
+    <div class="card"><h2>Vendég csapat</h2>
+      <div class="g3"><div><label>Tabellahelyezés</label><input class="f" id="ap" inputmode="decimal"></div><div><label>Lejátszott meccs</label><input class="f" id="am" inputmode="decimal"></div><div><label>Győzelmek <span class="opt">(hosszabb.-sel)</span></label><input class="f" id="aw" inputmode="decimal"></div></div>
+      <div class="g2"><div><label>Idény: lőtt gól</label><input class="f" id="agf" inputmode="decimal"></div><div><label>Idény: kapott gól</label><input class="f" id="aga" inputmode="decimal"></div></div>
+      <div class="g2"><div><label>Utolsó 5 IDEGEN: lőtt</label><input class="f" id="as" inputmode="decimal"></div><div><label>Utolsó 5 IDEGEN: kapott</label><input class="f" id="ac" inputmode="decimal"></div></div>
+      <div class="g2"><div><label>Forma, utolsó 5 <span class="opt">(Gy/V, opc.)</span></label><input class="f" id="aform" placeholder="pl. VGVVG" autocomplete="off"></div><div><label>Utolsó 5-ből gólvonal felett <span class="opt">(opc.)</span></label><input class="f" id="ao" inputmode="decimal"></div></div>
+      <div class="g3"><div><label>Védés % <span class="opt">(kapus, opc.)</span></label><input class="f" id="asv" inputmode="decimal" placeholder="90.4"></div><div><label>Emberelőny % <span class="opt">(opc.)</span></label><input class="f" id="apx" inputmode="decimal"></div><div><label>Emberhátrány % <span class="opt">(opc.)</span></label><input class="f" id="apk" inputmode="decimal"></div></div>
+    </div>
+  </div>
+
+  <div class="card"><h2>Egymás elleni (H2H) <span class="opt">(opcionális)</span></h2>
+    <div class="g4">
+      <div><label>Hazai győzelmei</label><input class="f" id="h2w" inputmode="decimal" placeholder="pl. 3"></div>
+      <div><label>Vendég győzelmei</label><input class="f" id="h2l" inputmode="decimal" placeholder="pl. 2"></div>
+      <div><label>Ebből gólvonal felett</label><input class="f" id="h2o" inputmode="decimal" placeholder="pl. 3"></div>
+    </div>
+    <p class="warn" style="margin:8px 0 0">Az utolsó 3–5 egymás elleni meccs összesítése, a mostani hazai/vendég csapat szerint.</p>
+  </div>
+
+  <div class="card"><h2>Szorzók</h2>
+    <p class="warn" style="margin:0 0 6px">Rendes játékidő (60 perc): 1 / X / 2. Továbbjutás (hosszabbítással/szétlövéssel együtt): hazai / vendég.</p>
+    <div class="g4">
+      <div><label>1 (60 perc)</label><input class="f" id="o1" inputmode="decimal"></div>
+      <div><label>X (60 perc)</label><input class="f" id="ox" inputmode="decimal"></div>
+      <div><label>2 (60 perc)</label><input class="f" id="o2" inputmode="decimal"></div>
+      <div></div>
+      <div><label>Hazai továbbjut</label><input class="f" id="om1" inputmode="decimal"></div>
+      <div><label>Vendég továbbjut</label><input class="f" id="om2" inputmode="decimal"></div>
+      <div><label>Gólvonal felett</label><input class="f" id="oov" inputmode="decimal"></div>
+      <div><label>Gólvonal alatt</label><input class="f" id="oun" inputmode="decimal"></div>
+    </div>
+  </div>
+
+  <div class="row"><button type="button" class="btn" id="bRun">Elemzés</button><button type="button" class="btn ghost" id="bCopy">📋 Összegzés másolása</button><a class="btn ghost" id="bTip" href="tippek.html?new=1" hidden>➕ Mentés tippként</a></div>
+  <div class="status" id="status"></div>
+  <div id="out" style="margin-top:14px"></div>
+  <p class="warn">Statisztikai becslés, nem garancia. A fogadás kockázattal jár. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p>
+</section></template>
+</main>
+<div id="ftr"></div>
+<script src="assets/fx.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
