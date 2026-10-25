@@ -86,16 +86,25 @@ function parseResult(sport, str) {
 }
 const cmp = (v, line, over) => v === line ? 'void' : ((v > line) === over ? 'win' : 'loss');
 
-/* win | loss | void | null (nem eldönthető automatikusan) */
+/* jégkorong: hosszabbítás / szétlövés jelölése az eredményben, pl. "4-3 ot" vagy "3-2 so" */
+export const otFlag = s => /(?:^|[^a-zA-Z])(ot|so|sp|szl|hn|hosszab\w*|szétl\w*)(?![a-zA-Z])/i.test(String(s || ''));
+
+/* win | loss | void | null (nem eldönthető automatikusan)
+   Jégkorongnál a "Győztes" piac a végeredményt nézi, a többi (1X2, hendikep, gól stb.) a 60 perces állást:
+   ha az eredmény mellé írod, hogy ot / so, a 60 perces állás döntetlen. */
 export function evalTip(t) {
   if (!t || !t.mk || !t.sd) return null;
-  const r = parseResult(t.sport, t.result); if (!r) return null;
-  const { h, a } = r, ln = Number(t.ln), over = t.sd === 'o', sum = h + a;
+  const sport = t.sport || 'jegkorong';
+  const r = parseResult(sport, t.result); if (!r) return null;
+  const ln = Number(t.ln), over = t.sd === 'o';
+  const fh = r.h, fa = r.a;
+  const reg = sport === 'jegkorong' && otFlag(t.result) && fh !== fa;
+  const h = reg ? Math.min(fh, fa) : fh, a = reg ? Math.min(fh, fa) : fa, sum = h + a;
   switch (t.mk) {
     case '1x2': return (t.sd === 'h' ? h > a : t.sd === 'a' ? a > h : h === a) ? 'win' : 'loss';
     case 'dc': return (t.sd === '1x' ? h >= a : t.sd === 'x2' ? a >= h : h !== a) ? 'win' : 'loss';
     case 'dnb': return h === a ? 'void' : ((t.sd === 'h') === (h > a) ? 'win' : 'loss');
-    case 'ml': return h === a ? null : ((t.sd === 'h') === (h > a) ? 'win' : 'loss');
+    case 'ml': return fh === fa ? null : ((t.sd === 'h') === (fh > fa) ? 'win' : 'loss');
     case 'hcp': case 'shcp': { const d = t.sd === 'h' ? h + ln - a : a + ln - h; return d > 0 ? 'win' : d < 0 ? 'loss' : 'void'; }
     case 'ghcp': { if (r.gh == null) return null; const d = t.sd === 'h' ? r.gh + ln - r.ga : r.ga + ln - r.gh; return d > 0 ? 'win' : d < 0 ? 'loss' : 'void'; }
     case 'tot': case 'stot': return cmp(sum, ln, over);
