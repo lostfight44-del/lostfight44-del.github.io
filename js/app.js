@@ -89,15 +89,7 @@ function summary(l) {
   const kstat = ls ? 'loss' : p ? 'pend' : combN ? 'win' : 'pend';
   const kLab = { win: 'a kombi nyert', loss: 'a kombi elbukott', pend: 'még függőben' }[kstat];
   const f2 = n => n.toFixed(2).replace('.', ',');
-  const box = (a, b, c = '') => `<div class="sbx ${c}"><b>${a}</b><span>${b}</span></div>`;
-  return `<div class="sumbar">
-    ${box(l.length, 'tipp')}
-    ${box(`<i class="g">${w}</i> / <i class="r">${ls}</i>${v ? ` / ${v}` : ''}${p ? ` / <em>${p}</em>` : ''}`, `nyert / vesztett${v ? ' / érvénytelen' : ''}${p ? ' / függő' : ''}`)}
-    ${box(rate == null ? '–' : rate + '%', 'találati arány')}
-    ${box(oddsN ? f2(oddsSum / oddsN) : '–', 'átlag szorzó')}
-    ${box(combN ? f2(comb) : '–', 'összes szorzat (kombi)', combN ? 'k-' + kstat : '')}
-    ${box(staked ? (profit >= 0 ? '+' : '−') + f2(Math.abs(profit)) : '–', 'eredmény (1 egység / tipp)', staked ? (profit >= 0 ? 'k-win' : 'k-loss') : '')}
-  </div>${combN > 1 ? `<p class="sumnote">Ha mindet egy szelvényen játszanád: ${f2(comb)}-szeres szorzó, ${kLab}.</p>` : ''}`;
+  return combN > 1 ? `<p class="sumnote">Ha mindet egy szelvényen játszanád: <b>${f2(comb)}-szeres</b> szorzó, ${kLab}.</p>` : '';
 }
 const watchUsers = cb => onSnapshot(collection(db, 'users'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => cb(null));
 
