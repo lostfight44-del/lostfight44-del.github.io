@@ -1,12 +1,14 @@
 /*BOOT_START*/
 let firebaseConfig, initializeApp, getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut;
 let getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, where, orderBy, limit, serverTimestamp;
+let mktList, mktDef, lineSuggest, buildPick, evalTip;
 let bootError = null;
 try {
   ({ firebaseConfig } = await import('./firebase-config.js'));
   ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'));
   ({ getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'));
   ({ getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, where, orderBy, limit, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'));
+  ({ mktList, mktDef, lineSuggest, buildPick, evalTip } = await import('./markets.js'));
 } catch (e) { bootError = e; }
 /*BOOT_END*/
 
@@ -111,7 +113,7 @@ function authPage() {
   const err = m => $('#aerr').innerHTML = m ? `<div class="flash err" style="margin:12px 0">${esc(m)}</div>` : '';
   $('#af').onsubmit = async e => {
     e.preventDefault(); err('');
-    const name = $('#name').value.trim(), pass = $('#pass').value, btn = e.submitter; btn.disabled = true;
+    const name = $('#name').value.trim(), pass = $('#pass').value, btn = (e.submitter || e.target.querySelector('[type=submit]')); btn.disabled = true;
     try {
       if (reg) {
         if (!/^[A-Za-z0-9_.\-]{3,20}$/.test(name)) throw { m: 'A felhasználónév 3–20 karakter lehet (angol betű, szám, _ . -).' };
@@ -192,34 +194,108 @@ function tippekPage() {
     if (!admin) return;
     $('#tlist').querySelectorAll('.rb').forEach(i => {
       i.onkeydown = e => { if (e.key === 'Enter') i.blur(); };
-      i.onblur = async () => { const t = all.find(x => x.id === i.dataset.id); if (t && (t.result || '') !== i.value.trim()) { try { await updateDoc(doc(db, 'tips', t.id), { result: i.value.trim() }); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } } if (pending) setTimeout(list, 0); };
+      i.onblur = async () => {
+        const t = all.find(x => x.id === i.dataset.id), val = i.value.trim();
+        if (t && (t.result || '') !== val) {
+          const upd = { result: val };
+          if (t.mk) { if (!val) upd.status = 'pend'; else { const r = evalTip({ ...t, result: val }); if (r) upd.status = r; } }   // az eredményből eldönti: nyert / vesztett / érvénytelen
+          try { await updateDoc(doc(db, 'tips', t.id), upd); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
+        }
+        if (pending) setTimeout(list, 0);
+      };
     });
     $('#tlist').querySelectorAll('[data-cy]').forEach(b => b.onclick = async () => { const t = all.find(x => x.id === b.dataset.cy); try { await updateDoc(doc(db, 'tips', t.id), { status: NEXT[t.status || 'pend'] }); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } });
     $('#tlist').querySelectorAll('[data-del]').forEach(a => a.onclick = async e => { e.preventDefault(); if (!confirm('Biztosan törlöd ezt a tippet?')) return; try { await deleteDoc(doc(db, 'tips', a.dataset.del)); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } });
     $('#tlist').querySelectorAll('[data-edit]').forEach(a => a.onclick = e => { e.preventDefault(); openForm(all.find(x => x.id === a.dataset.edit)); });
   }
-  function openForm(t) {
+  let LG = null;
+  async function openForm(t) {
+    if (!LG) { try { LG = (await import('./leagues.js')).LEAGUES; } catch (e) { LG = {}; } }
     const me = ADMIN_NAMES.find(n => n.toLowerCase() === (user.displayName || '').toLowerCase()) || ADMIN_NAMES[0];
     const f = t || { sport: st.s, date: curDate(), tipster: me, status: 'pend' };
     const v = k => esc(f[k] ?? '');
-    $('#formBox').innerHTML = `<div class="panel" style="border-color:rgba(245,184,61,.5)"><h2 style="font-size:1.2rem">${t ? 'Tipp szerkesztése' : 'Új tipp feltöltése'}</h2><form id="tf">
-    <div class="g3"><div><label>Sportág</label><select id="f_sport">${SPORTS.map(([k, n]) => `<option value="${k}" ${sportOf(f) === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div><label>Dátum</label><input type="date" id="f_date" required value="${v('date')}"></div><div><label>Kezdés <span class="opt">(opc.)</span></label><input type="time" id="f_time" value="${v('time')}"></div></div>
-    <div class="g2"><div><label>Hazai csapat / játékos</label><input id="f_home" required maxlength="60" value="${v('home')}"></div><div><label>Vendég csapat / játékos</label><input id="f_away" required maxlength="60" value="${v('away')}"></div></div>
-    <div class="g3"><div><label>Bajnokság <span class="opt">(opc.)</span></label><input id="f_league" maxlength="60" value="${v('league')}"></div><div><label>Tipp</label><input id="f_pick" required maxlength="80" placeholder="pl. Hazai győzelem" value="${v('pick')}"></div><div><label>Szorzó</label><input id="f_odds" inputmode="decimal" placeholder="1.85" value="${v('odds')}"></div></div>
-    <div class="g3"><div><label>Tippadó</label><select id="f_tipster">${ADMIN_NAMES.map(n => `<option ${(f.tipster || me) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div><label>Állapot</label><select id="f_status">${Object.entries(LAB).map(([k, n]) => `<option value="${k}" ${(f.status || 'pend') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div><label>Végeredmény <span class="opt">(opc.)</span></label><input id="f_result" maxlength="20" placeholder="3-2" value="${v('result')}"></div></div>
+    $('#formBox').innerHTML = `<div class="panel fpanel"><h2 style="font-size:1.2rem">${t ? 'Tipp szerkesztése' : 'Új tipp feltöltése'}</h2><form id="tf" autocomplete="off">
+    <div class="g3"><div><label>Sportág</label><select id="f_sport">${SPORTS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></div><div><label>Dátum</label><input type="date" id="f_date" required value="${v('date')}"></div><div><label>Kezdés <span class="opt">(opc.)</span></label><input type="time" id="f_time" value="${v('time')}"></div></div>
+    <div class="g2"><div><label>Liga / bajnokság</label><select id="f_league"></select></div><div id="f_lgbox" hidden><label>Saját liga neve</label><input id="f_lgcustom" maxlength="60"></div></div>
+    <div class="g2"><div><label>Hazai csapat / játékos</label><input id="f_home" list="dlTeams" required maxlength="60" placeholder="Kezdj el gépelni…" value="${v('home')}"></div><div><label>Vendég csapat / játékos</label><input id="f_away" list="dlTeams" required maxlength="60" placeholder="Kezdj el gépelni…" value="${v('away')}"></div></div>
+    <datalist id="dlTeams"></datalist><datalist id="dlLines"></datalist>
+    <div class="fsep">Fő tipp</div>
+    <div class="g3"><div><label>Piac</label><select id="f_mk"></select></div><div id="f_sdbox"><label>Kimenet</label><select id="f_sd"></select></div><div id="f_lnbox"><label>Vonal <span class="opt" id="f_lnhint"></span></label><input id="f_ln" list="dlLines" inputmode="decimal" placeholder="pl. 2.5"></div><div id="f_frbox" hidden style="grid-column:span 2"><label>Tipp szövege</label><input id="f_free" maxlength="80"></div></div>
+    <div class="pickprev" id="f_prev"></div>
+    <div class="g3"><div><label>Szorzó <span class="opt">(opc.)</span></label><input id="f_odds" inputmode="decimal" placeholder="1.85" value="${v('odds')}"></div><div><label>Tippadó</label><select id="f_tipster">${ADMIN_NAMES.map(n => `<option ${(f.tipster || me) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div><label>Végeredmény <span class="opt">(opc.)</span></label><input id="f_result" maxlength="30" placeholder="3-2" value="${v('result')}"></div></div>
+    <div class="g3"><div><label>Állapot</label><select id="f_status">${Object.entries(LAB).map(([k, n]) => `<option value="${k}" ${(f.status || 'pend') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div style="grid-column:span 2"><p class="hint">Ha megadsz végeredményt, a nyert / vesztett / érvénytelen állapotot a rendszer a fő tippből magától eldönti (60 perces eredmény; tenisznél szettek: 2-1, vagy szettenként: 6-4 3-6 7-5).</p></div></div>
     <div class="row" style="margin-top:18px"><button class="btn" type="submit">Mentés</button><button class="btn ghost" type="button" id="fcancel">Mégse</button></div></form></div>`;
+    const E = id => $('#' + id), sport = () => E('f_sport').value;
+    const leaguesOf = () => LG[sport()] || [];
+    const allTeams = () => [...new Set(leaguesOf().flatMap(l => l.t))];
+    function fillTeams() {
+      const sel = E('f_league').value, lg = leaguesOf().find(l => l.n === sel);
+      const list = lg && lg.t.length ? lg.t : allTeams();
+      E('dlTeams').innerHTML = list.map(x => `<option value="${esc(x)}">`).join('');
+    }
+    function fillLeagues(cur) {
+      const ls = leaguesOf();
+      E('f_league').innerHTML = '<option value="">– válassz ligát –</option>' + ls.map(l => `<option>${esc(l.n)}</option>`).join('') + '<option value="__x">Egyéb (saját)…</option>';
+      let val = '', custom = '';
+      if (cur) { if (ls.some(l => l.n === cur)) val = cur; else { val = '__x'; custom = cur; } }
+      E('f_league').value = val; E('f_lgcustom').value = custom; E('f_lgbox').hidden = val !== '__x'; fillTeams();
+    }
+    function fillMarkets(curMk) {
+      const ms = mktList(sport());
+      E('f_mk').innerHTML = ms.map(m => `<option value="${m.k}">${esc(m.l)}</option>`).join('');
+      if (curMk && ms.some(m => m.k === curMk)) E('f_mk').value = curMk;
+      fillMarket();
+    }
+    function fillMarket(curSd, curLn) {
+      const m = mktDef(sport(), E('f_mk').value);
+      E('f_sd').innerHTML = m.s.map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join('');
+      if (curSd && m.s.some(x => x[0] === curSd)) E('f_sd').value = curSd;
+      E('f_sdbox').hidden = !!m.free; E('f_frbox').hidden = !m.free; E('f_lnbox').hidden = !m.line;
+      if (m.line) {
+        E('f_lnhint').textContent = m.line === 'signed' ? '(− vagy + is lehet)' : '';
+        E('dlLines').innerHTML = lineSuggest(sport(), m.k).map(x => `<option value="${x}">`).join('');
+        E('f_ln').value = curLn != null ? curLn : '';
+      }
+      prev();
+    }
+    const readLn = () => { const n = parseFloat(String(E('f_ln').value).replace(',', '.').replace('−', '-')); return isNaN(n) ? null : n; };
+    function curPick() {
+      const m = mktDef(sport(), E('f_mk').value);
+      if (m.free) return E('f_free').value.trim();
+      if (m.line && readLn() == null) return '';
+      return buildPick({ sport: sport(), mk: m.k, sd: E('f_sd').value, ln: readLn(), home: E('f_home').value, away: E('f_away').value });
+    }
+    function prev() { const p = curPick(); E('f_prev').innerHTML = p ? `Tipp: <b>${esc(p)}</b>` : '<span class="small">Válaszd ki a fő tippet…</span>'; }
+
+    // kezdőállapot (új vagy szerkesztett tipp)
+    E('f_sport').value = sportOf(f);
+    fillLeagues(f.league || '');
+    const hasMk = !!f.mk;
+    fillMarkets(hasMk ? f.mk : (t ? 'free' : ''));
+    if (hasMk) fillMarket(f.sd, f.ln); else if (t) E('f_free').value = f.pick || '';
+    prev();
+
+    E('f_sport').onchange = () => { fillLeagues(''); fillMarkets(''); };
+    E('f_league').onchange = () => { E('f_lgbox').hidden = E('f_league').value !== '__x'; fillTeams(); };
+    E('f_mk').onchange = () => fillMarket();
+    ['f_sd', 'f_ln', 'f_home', 'f_away', 'f_free'].forEach(id => { E(id).oninput = prev; E(id).onchange = prev; });
     $('#formBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
     $('#fcancel').onclick = () => { $('#formBox').innerHTML = ''; };
     $('#tf').onsubmit = async e => {
       e.preventDefault();
-      const odds = parseFloat(String($('#f_odds').value).replace(',', '.'));
-      const row = { sport: $('#f_sport').value, date: $('#f_date').value, time: $('#f_time').value, league: $('#f_league').value.trim(), home: $('#f_home').value.trim(), away: $('#f_away').value.trim(), pick: $('#f_pick').value.trim(), odds: odds > 1 ? Math.round(odds * 100) / 100 : 0, tipster: $('#f_tipster').value, status: $('#f_status').value, result: $('#f_result').value.trim() };
-      e.submitter.disabled = true;
+      const m = mktDef(sport(), E('f_mk').value), ln = readLn(), pick = curPick();
+      if (m.line && ln == null) { toast('Add meg a vonalat (pl. 2.5 vagy -1.5).', 'err'); return; }
+      if (!pick) { toast('Add meg a fő tippet.', 'err'); return; }
+      const odds = parseFloat(String(E('f_odds').value).replace(',', '.'));
+      const lgSel = E('f_league').value;
+      const row = { sport: sport(), date: E('f_date').value, time: E('f_time').value, league: lgSel === '__x' ? E('f_lgcustom').value.trim() : lgSel, home: E('f_home').value.trim(), away: E('f_away').value.trim(), mk: m.free ? '' : m.k, sd: m.free ? '' : E('f_sd').value, ln: m.line ? ln : null, pick, odds: odds > 1 ? Math.round(odds * 100) / 100 : 0, tipster: E('f_tipster').value, status: E('f_status').value, result: E('f_result').value.trim() };
+      if (row.result && row.mk) { const r = evalTip(row); if (r) row.status = r; }
+      (e.submitter || e.target.querySelector('[type=submit]')).disabled = true;
       try {
         if (t) await updateDoc(doc(db, 'tips', t.id), row); else await addDoc(collection(db, 'tips'), { ...row, created: Date.now() });
         st.s = row.sport; if (st.v !== 'all') { st.v = row.date === today ? 'today' : row.date === tomorrow ? 'tomorrow' : 'date'; st.d = row.date; }
         $('#formBox').innerHTML = ''; sync(); tabs(); list(); toast(t ? 'A tipp módosítva.' : 'A tipp elmentve.');
-      } catch (x) { toast('Mentés sikertelen: ' + (x.code || x.message), 'err'); e.submitter.disabled = false; }
+      } catch (x) { toast('Mentés sikertelen: ' + (x.code || x.message), 'err'); (e.submitter || e.target.querySelector('[type=submit]')).disabled = false; }
     };
   }
   const dp = $('#dpick'); dp.onchange = () => { if (dp.value) { st.d = dp.value; sync(); tabs(); list(); } };
@@ -250,10 +326,10 @@ function contactPage() {
       const last = +localStorage.getItem('vg_lastmsg') || 0; if (Date.now() - last < 30000) { toast('Várj egy kicsit két üzenet között.', 'err'); return; }
       const email = $('#c_mail').value.trim(), msg = $('#c_msg').value.trim();
       if (msg.length < 5) { toast('Írj egy rövid üzenetet.', 'err'); return; }
-      e.submitter.disabled = true;
+      (e.submitter || e.target.querySelector('[type=submit]')).disabled = true;
       try { await addDoc(collection(db, 'messages'), { name, uid: user.uid, email: email.slice(0, 100), msg: msg.slice(0, 2000), time: Date.now() }); localStorage.setItem('vg_lastmsg', Date.now()); $('#c_msg').value = ''; toast('Köszönjük, az üzeneted megérkezett!'); }
       catch (x) { toast('Az üzenet küldése nem sikerült: ' + (x.code || x.message), 'err'); }
-      e.submitter.disabled = false;
+      (e.submitter || e.target.querySelector('[type=submit]')).disabled = false;
     };
   }
   if (isAdmin()) {
