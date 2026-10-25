@@ -174,3 +174,12 @@ td.acts{display:flex;gap:6px;flex-wrap:wrap}
 .sumnote{margin:6px 0 4px;font-size:.8rem;color:var(--mu)}
 @media(max-width:760px){.sumbar{grid-template-columns:repeat(3,1fr)}}
 .sumnote{padding:12px 0 6px;margin:0;font-size:.9rem}.sumnote b{color:var(--gold2)}
+
+/* kapcsolatvétel */
+.people{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:760px}
+.person{display:flex;align-items:center;gap:14px;padding:18px;border-radius:var(--r);border:1px solid var(--bd);background:linear-gradient(180deg,var(--sf2),var(--sf));transition:.25s}
+.person:hover{border-color:rgba(245,184,61,.55);transform:translateY(-3px);box-shadow:0 16px 36px -18px rgba(245,184,61,.4)}
+.pav{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.2rem;color:#1a1204;background:linear-gradient(135deg,var(--gold2),var(--gold3))}
+.pin{flex:1;min-width:0}.pin small{display:block;color:var(--mu);font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.pin b{display:block;font-size:1.05rem;word-break:break-all}.pin span{color:var(--gold2);font-size:.85rem;font-weight:600}
+@media(max-width:640px){.people{grid-template-columns:1fr}}
