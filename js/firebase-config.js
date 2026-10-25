@@ -1,4 +1,5 @@
-const firebaseConfig = {
+// VikingGOLD – Firebase beállítások
+export const firebaseConfig = {
   apiKey: "AIzaSyAh64WWEaIAhf_z9ZQRHiJ_XZNHmCw9jRg",
   authDomain: "vikinggold-4ef10.firebaseapp.com",
   projectId: "vikinggold-4ef10",
