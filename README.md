@@ -1,1 +1,0 @@
-# vikinggold.github.io
