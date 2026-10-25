@@ -43,7 +43,7 @@ function showStoredFlash() { try { const f = JSON.parse(sessionStorage.getItem('
 
 /* ---------- oldalváz ---------- */
 function layout() {
-  const nav = [['home', 'index.html', 'Kezdőlap'], ['tippek', 'tippek.html', 'Tippek'], ['contact', 'elerhetosegek.html', 'Elérhetőségek']];
+  const nav = [['home', 'index.html', 'Kezdőlap'], ['tippek', 'tippek.html', 'Tippek'], ['join', 'kapcsolatvetel.html', 'Kapcsolatvétel'], ['contact', 'elerhetosegek.html', 'Elérhetőségek']];
   $('#hdr').innerHTML = `
 <header class="top">
   <a class="logo" href="index.html" aria-label="VikingGOLD"><span class="mark"><svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdc82"/><stop offset=".55" stop-color="#f5b83d"/><stop offset="1" stop-color="#d98e0b"/></linearGradient></defs><path d="M24 3 42 10v14c0 10-7.5 17.5-18 21C13.5 41.5 6 34 6 24V10z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M14 16l10 18 10-18" fill="none" stroke="url(#lg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="wm">Viking<b>GOLD</b></span></a>
@@ -54,7 +54,7 @@ function layout() {
       ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : 'Tag'}</small></div><a href="tippek.html">Tippek</a><a href="beallitasok.html">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="auth.html?mode=login">Belépés</a><a href="auth.html?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
-  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="index.html">Kezdőlap</a><a href="tippek.html">Tippek</a><a href="elerhetosegek.html">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
+  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="index.html">Kezdőlap</a><a href="tippek.html">Tippek</a><a href="kapcsolatvetel.html">Kapcsolatvétel</a><a href="elerhetosegek.html">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
   // menü viselkedés
   const uic = $('#uic'), um = $('#umenu'), bg = $('#burger'), nv = $('#nav');
   uic.onclick = e => { e.stopPropagation(); um.hidden = !um.hidden; uic.setAttribute('aria-expanded', String(!um.hidden)); };
@@ -73,7 +73,7 @@ const LAB = { pend: 'Függőben', win: 'Nyert', loss: 'Vesztett', void: 'Érvén
 const NEXT = { pend: 'win', win: 'loss', loss: 'void', void: 'pend' };
 const ICON = { win: '<span class="ic win" title="Nyert">✔</span>', loss: '<span class="ic loss" title="Vesztett">✕</span>', void: '<span class="ic void" title="Érvénytelen">↩</span>', pend: '<span class="ic pend" title="Függőben">⏳</span>' };
 /* a tipp tényleges állapota: ha van végeredmény és még "függőben", a rendszer magától eldönti (nyert / vesztett / érvénytelen) */
-const effStatus = t => { const s = t.status || 'pend'; if (s !== 'pend') return s; return (t.mk && t.result && evalTip({ ...t, sport: sportOf(t) })) || 'pend'; };
+const effStatus = t => { const s = t.status || 'pend'; if (s !== 'pend') return s; return (t.result && evalTip({ ...t, sport: sportOf(t) })) || 'pend'; };
 /* összegzés a listázott tippekről: állások, találati arány, kombi szorzat, 1 egységes tét eredménye */
 function summary(l) {
   if (!l.length) return '';
@@ -274,7 +274,7 @@ function tippekPage() {
         const t = all.find(x => x.id === i.dataset.id), val = i.value.trim();
         if (!t || val === i._saved) return;
         const upd = { result: val };
-        if (t.mk) { if (!val) upd.status = 'pend'; else { const r = evalTip({ ...t, sport: sportOf(t), result: val }); upd.status = r || 'pend'; } }   // az eredményből eldönti: nyert / vesztett / érvénytelen
+        { const r = val ? evalTip({ ...t, sport: sportOf(t), result: val }) : null; if (!val) upd.status = 'pend'; else if (r) upd.status = r; else if (t.mk) upd.status = 'pend'; }   // az eredményből eldönti: nyert / vesztett / érvénytelen
         i._saved = val;
         try { await updateDoc(doc(db, 'tips', t.id), upd); } catch (x) { i._saved = ''; toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
       };
@@ -282,7 +282,7 @@ function tippekPage() {
         const t = all.find(x => x.id === i.dataset.id); if (!t) return;
         const val = i.value.trim();
         t.result = val;
-        if (t.mk) t.status = val ? (evalTip({ ...t, sport: sportOf(t), result: val }) || 'pend') : 'pend';
+        { const r = val ? evalTip({ ...t, sport: sportOf(t), result: val }) : null; if (!val) t.status = 'pend'; else if (r) t.status = r; else if (t.mk) t.status = 'pend'; }
         const row = i.closest('.tl'), s = effStatus(t);
         row.className = 'tl st-' + s;
         const ib = row.querySelector('.icb'); if (ib) ib.innerHTML = ICON[s];
@@ -378,7 +378,7 @@ function tippekPage() {
       const odds = parseFloat(String(E('f_odds').value).replace(',', '.'));
       const lgSel = E('f_league').value;
       const row = { sport: sport(), date: E('f_date').value, time: E('f_time').value, league: lgSel === '__x' ? E('f_lgcustom').value.trim() : lgSel, home: E('f_home').value.trim(), away: E('f_away').value.trim(), mk: m.free ? '' : m.k, sd: m.free ? '' : E('f_sd').value, ln: m.line ? ln : null, pick, odds: odds > 1 ? Math.round(odds * 100) / 100 : 0, tipster: E('f_tipster').value, status: E('f_status').value, result: E('f_result').value.trim() };
-      if (row.result && row.mk) { const r = evalTip(row); if (r) row.status = r; }
+      if (row.result) { const r = evalTip(row); if (r) row.status = r; }
       (e.submitter || e.target.querySelector('[type=submit]')).disabled = true;
       try {
         if (t) await updateDoc(doc(db, 'tips', t.id), row); else await addDoc(collection(db, 'tips'), { ...row, created: Date.now() });
@@ -430,6 +430,24 @@ function contactPage() {
       $('#mlist').querySelectorAll('[data-m]').forEach(b => b.onclick = () => deleteDoc(doc(db, 'messages', b.dataset.m)));
     }, x => { $('#mlist').textContent = 'Az üzenetek nem tölthetők be: ' + (x.code || x.message); });
   }
+}
+
+/* ---------- kapcsolatvétel / Gold csoport ---------- */
+function joinPage() {
+  const PEOPLE = [['msutafayolo', 'ChristianJr'], ['usnerly_', '_Notryn']];
+  $('#main').innerHTML = `<section class="wrap" style="padding-top:30px">
+  <span class="eyebrow">Kapcsolatvétel</span>
+  <h1 style="margin-top:14px">Gold csoport <span class="g">csatlakozás</span></h1>
+  <p class="small" style="font-size:1rem;max-width:620px;margin-bottom:22px">Szeretnél csatlakozni a VikingGOLD Gold csoporthoz? Vedd fel a kapcsolatot Discordon az alábbi személyek valamelyikével, ők segítenek a csatlakozásban.</p>
+  <h2 class="sect-t" style="font-size:1.2rem;margin:0 0 12px">Kivel vedd fel a kapcsolatot?</h2>
+  <div class="people">${PEOPLE.map(([u, n]) => `<div class="person reveal"><div class="pav">${esc(n.replace(/^_/, '').charAt(0).toUpperCase())}</div><div class="pin"><small>Discord</small><b>${esc(u)}</b><span>${esc(n)}</span></div><button class="btn sm ghost" data-copy="${esc(u)}">Másolás</button></div>`).join('')}</div>
+  <p class="small" style="margin-top:18px">Discordon keresd a felhasználónevet, és írj nekik egy rövid üzenetet.</p>
+  </section>`;
+  $('#main').querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Másolva ✔'; setTimeout(() => { b.textContent = 'Másolás'; }, 1800); }
+    catch (x) { toast('A másolás nem engedélyezett, jelöld ki és másold kézzel: ' + b.dataset.copy, 'err'); }
+  });
+  document.querySelectorAll('.reveal').forEach(e => e.classList.add('in'));
 }
 
 /* ---------- beállítások / tagkezelés ---------- */
@@ -542,6 +560,7 @@ async function start(u) {
   else if (page === 'contact') contactPage();
   else if (page === 'home') homePage();
   else if (page === 'settings') settingsPage();
+  else if (page === 'join') joinPage();
   if (page !== 'tippek' && page !== 'settings') showStoredFlash();
 }
 
