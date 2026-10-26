@@ -43,7 +43,7 @@ function showStoredFlash() { try { const f = JSON.parse(sessionStorage.getItem('
 
 /* ---------- oldalváz ---------- */
 function layout() {
-  const nav = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
+  const nav = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['updates', '/updates', 'Updates'], ['chat', '/chat', 'Chat'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
   $('#hdr').innerHTML = `
 <header class="top">
   <a class="logo" href="/" aria-label="VikingGOLD"><span class="mark"><svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdc82"/><stop offset=".55" stop-color="#f5b83d"/><stop offset="1" stop-color="#d98e0b"/></linearGradient></defs><path d="M24 3 42 10v14c0 10-7.5 17.5-18 21C13.5 41.5 6 34 6 24V10z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M14 16l10 18 10-18" fill="none" stroke="url(#lg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="wm">Viking<b>GOLD</b></span></a>
@@ -54,7 +54,7 @@ function layout() {
       ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : 'Tag'}</small></div><a href="/tippek">Tippek</a><a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
-  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
+  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
   // menü viselkedés
   const uic = $('#uic'), um = $('#umenu'), bg = $('#burger'), nv = $('#nav');
   uic.onclick = e => { e.stopPropagation(); um.hidden = !um.hidden; uic.setAttribute('aria-expanded', String(!um.hidden)); };
@@ -535,7 +535,7 @@ function contactPage() {
 
 /* ---------- kapcsolatvétel / Gold csoport ---------- */
 function joinPage() {
-  const PEOPLE = [['msutafayolo', 'ChristianJr'], ['usnerly_', '_Notryn']];
+  const PEOPLE = [['mustafayolo', 'ChristianJr'], ['usnerly_', '_Notryn']];
   const box = $('#joinbox'); if (!box) return;
   box.innerHTML = `<div class="card" style="margin-bottom:22px"><span class="eyebrow">Kapcsolatvétel</span>
   <h2 style="font-size:1.5rem;margin-top:14px">Gold csoport <span class="g">csatlakozás</span></h2>
@@ -661,6 +661,25 @@ function settingsPage() {
   onSnapshot(collection(db, 'userEmails'), sn => { mails = {}; sn.docs.forEach(d => mails[d.id] = d.data().email); draw(); }, () => { });
 }
 
+/* ---------- Updates / Chat (külön modul) + "új update" jelvény ---------- */
+async function loadCommunity() {
+  try {
+    const m = await import('./community.js');
+    const ctx = { db, auth, user, profile, isAdmin: isAdmin(), esc, $, toast, huDate, ymd, gate, gateEvents, adminName: isAdminName };
+    if (page === 'updates') m.updatesPage(ctx); else m.chatPage(ctx);
+  } catch (e) { $('#main').innerHTML = infoView('⚠️', 'Betöltési hiba', esc(String((e && e.message) || e))); }
+}
+async function updBadge() {
+  try {
+    const s = await getDocs(query(collection(db, 'updates'), orderBy('created', 'desc'), limit(1)));
+    if (s.empty) return;
+    if ((s.docs[0].data().created || 0) > (+localStorage.getItem('vg_upd_seen') || 0)) {
+      const a = document.querySelector('#nav a[href="/updates"]');
+      if (a) a.insertAdjacentHTML('beforeend', '<i style="display:inline-block;width:8px;height:8px;margin-left:7px;border-radius:50%;background:#ff5468;box-shadow:0 0 8px #ff5468;vertical-align:middle"></i>');
+    }
+  } catch (e) { }
+}
+
 /* ---------- indítás ---------- */
 async function start(u) {
   user = u; profile = null; adminFlag = false;
@@ -676,6 +695,8 @@ async function start(u) {
   else if (page === 'contact') { contactPage(); joinPage(); }
   else if (page === 'home') homePage();
   else if (page === 'settings') settingsPage();
+  else if (page === 'updates' || page === 'chat') loadCommunity();
+  if (page !== 'updates') updBadge();
   if (page !== 'tippek' && page !== 'settings') showStoredFlash();
 }
 
