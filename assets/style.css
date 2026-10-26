@@ -273,9 +273,10 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mu2
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 /* ===== Sportos háttérkép – az oldallal együtt görgetődik (finom parallax), stabil magassággal ===== */
+html,body{overscroll-behavior-y:none}
 body{position:relative}
 .bgfx{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;z-index:-2;pointer-events:none;contain:strict}
-.bgfx i{position:absolute;top:0;left:0;right:0;display:block;height:max(150vh,1250px);height:max(150svh,1250px);
+.bgfx i{position:absolute;top:0;left:0;right:0;display:block;height:min(max(150vh,1250px),100%);height:min(max(150svh,1250px),100%);
   background-color:var(--bg);
   background-image:
     radial-gradient(1000px 520px at 50% -160px,rgba(246,196,83,.14),transparent 70%),
@@ -286,7 +287,7 @@ body{position:relative}
   transform:translate3d(0,0,0);will-change:transform;animation:bgin .9s ease both}
 @keyframes bgin{from{opacity:0}to{opacity:1}}
 @media(max-width:760px){
-  .bgfx i{height:max(140vh,1150px);height:max(140svh,1150px);background-image:
+  .bgfx i{height:min(max(140vh,1150px),100%);height:min(max(140svh,1150px),100%);background-image:
     radial-gradient(700px 400px at 50% -120px,rgba(246,196,83,.14),transparent 70%),
     linear-gradient(180deg,rgba(5,7,13,.46) 0,rgba(5,7,13,.62) 50%,rgba(5,7,13,.9) 88%,#05070d 100%),
     url("/assets/bg-m.webp");
