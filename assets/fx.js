@@ -55,7 +55,8 @@
     document.body.insertBefore(w, document.body.firstChild);
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var tk = false, K = 0.22;
-    var upd = function () { tk = false; var y = Math.max(0, window.pageYOffset || document.documentElement.scrollTop || 0); im.style.transform = 'translate3d(0,' + (y * K).toFixed(1) + 'px,0)'; };
+    var upd = function () { tk = false; var y = Math.max(0, window.pageYOffset || document.documentElement.scrollTop || 0), room = Math.max(0, w.clientHeight - im.offsetHeight); im.style.transform = 'translate3d(0,' + Math.min(y * K, room).toFixed(1) + 'px,0)'; };
+    addEventListener('resize', upd); addEventListener('load', upd);
     addEventListener('scroll', function () { if (!tk) { tk = true; requestAnimationFrame(upd); } }, { passive: true });
     upd();
   })();
