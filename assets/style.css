@@ -271,3 +271,24 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mu2
 .foot .small{line-height:1.7}
 @media(max-width:760px){.hero{padding:54px 16px 38px}.lead{font-size:1rem}.banner{padding:22px 20px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== Sportos háttérkép (assets/bg.webp) ===== */
+html::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(1000px 520px at 50% -160px,rgba(246,196,83,.14),transparent 70%),
+    radial-gradient(ellipse at 50% 38%,rgba(5,7,13,.38) 0,transparent 62%),
+    linear-gradient(180deg,rgba(5,7,13,.4) 0,rgba(5,7,13,.62) 45%,rgba(5,7,13,.9) 100%),
+    url("/assets/bg.webp");
+  background-size:auto,auto,auto,cover;background-position:center,center,center,center top;background-repeat:no-repeat;
+  animation:bgin .9s ease both}
+@keyframes bgin{from{opacity:0}to{opacity:1}}
+@media(max-width:760px){
+  html::before{background-image:
+    radial-gradient(700px 400px at 50% -120px,rgba(246,196,83,.14),transparent 70%),
+    linear-gradient(180deg,rgba(5,7,13,.5) 0,rgba(5,7,13,.72) 50%,rgba(5,7,13,.92) 100%),
+    url("/assets/bg-m.webp");
+    background-size:auto,auto,cover;background-position:center,center,center top}
+}
+.hero .lead{color:#d5dce8;text-shadow:0 1px 14px rgba(5,7,13,.9)}
+.hero h1,.sect-t{text-shadow:0 2px 24px rgba(5,7,13,.65)}
