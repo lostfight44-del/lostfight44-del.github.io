@@ -91,6 +91,10 @@ function summary(l) {
   const f2 = n => n.toFixed(2).replace('.', ',');
   return combN > 1 ? `<p class="sumnote">Ha mindet egy szelvényen játszanád: <b>${f2(comb)}-szeres</b> szorzó, ${kLab}.</p>` : '';
 }
+/* bejött | összes (az érvénytelen tippek nem számítanak bele) */
+const cnt = l => { let w = 0, n = 0, p = 0; l.forEach(t => { const s = effStatus(t); if (s === 'void') return; n++; if (s === 'win') w++; else if (s === 'pend') p++; }); return { w, n, p }; };
+const scH = c => `<span class="sc" title="${c.w} bejött, ${c.n - c.w - c.p} elbukott, ${c.p} függőben"><b class="sw">${c.w}</b><i>|</i><b>${c.n}</b></span>`;
+const fmtAvg = n => n.toFixed(1).replace('.', ',');
 const watchUsers = cb => onSnapshot(collection(db, 'users'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => cb(null));
 
 function setupBanner() {
@@ -271,10 +275,53 @@ function tippekPage() {
   <div class="tabs vtabs" id="vTabs"></div>
   <div class="row" id="dRow" style="margin:-6px 0 14px" hidden><input id="dpick" type="date" style="max-width:200px" aria-label="Dátum választása"></div>
   <div id="formBox"></div>
-  <div class="tlog"><div class="tlh"><span>Tippek és eredmények</span><small id="tlSub"></small></div><div id="tsum"></div><div id="tlist"><div class="empty">Betöltés…</div></div></div>
+  <div class="sbar" id="sbar"></div>
+  <div class="tlog"><div class="tlh"><span>Tippek és eredmények</span><small id="tlSub"></small></div><div id="rbox"></div><div id="tsum"></div><div id="tlist"><div class="empty">Betöltés…</div></div></div>
   </section>`;
   showStoredFlash();
 
+  let rts = [], unR = null, rKey = '', rErr = false;
+  const dayDate = () => st.v === 'all' ? today : curDate();
+  const rstat = (d, sp) => { let n = 0, sum = 0, mine = 0; rts.forEach(r => { if (r.date === d && r.sport === sp) { const v = +r.stars; if (v >= 1 && v <= 5) { n++; sum += v; if (user && r.uid === user.uid) mine = v; } } }); return { n, avg: n ? sum / n : 0, mine }; };
+  function rateHtml(d, sp, hasTips, mini) {
+    const r = rstat(d, sp), future = d > today;
+    const can = !admin && !future && hasTips && !rErr;
+    const note = rErr ? (admin ? 'Az értékelés nincs bekapcsolva: add hozzá a „ratings” Firestore szabályt.' : '') : admin ? 'Tippadóként nem értékelhetsz.' : future ? 'Ezt a napot még nem lehet értékelni.' : !hasTips ? 'Nincs mit értékelni.' : r.mine ? `Értékelésed: ${r.mine} ★ (kattints rá újra a törléshez)` : 'Kattints a csillagokra az értékeléshez.';
+    const stars = [5, 4, 3, 2, 1].map(i => `<button type="button" class="star ${i <= r.mine ? 'on' : ''}" data-v="${i}" aria-label="${i} csillag" ${can ? '' : 'disabled'}>★</button>`).join('');
+    const avg = r.n ? `<span class="ravg"><span class="avs" style="--p:${(r.avg / 5 * 100).toFixed(0)}%" aria-hidden="true">★★★★★</span><b>${fmtAvg(r.avg)}</b> · ${r.n} értékelés</span>` : '<span class="ravg">Még nincs értékelés</span>';
+    return `<div class="rate${mini ? ' mini' : ''}" data-rd="${esc(d)}" data-rs="${esc(sp)}"><span class="rt">${mini ? 'Értékelés' : 'Hogy sikerültek az aznapi tippek?'}</span><span class="rstars${can ? '' : ' off'}" role="group" aria-label="Értékelés 1–5 csillag">${stars}</span>${avg}${mini ? '' : `<span class="rnote">${note}</span>`}</div>`;
+  }
+  function rate() {
+    if (st.v === 'all') { list(); return; }
+    const hasTips = all.some(t => sportOf(t) === st.s && t.date === curDate());
+    $('#rbox').innerHTML = loaded ? rateHtml(curDate(), st.s, hasTips, false) : '';
+  }
+  function watchR() {
+    const k = st.v === 'all' ? 'all' : curDate(); if (k === rKey) return; rKey = k; if (unR) unR(); rErr = false; rts = [];
+    const q = k === 'all' ? query(collection(db, 'ratings'), orderBy('date', 'desc'), limit(2000)) : query(collection(db, 'ratings'), where('date', '==', k));
+    unR = onSnapshot(q, sn => { rErr = false; rts = sn.docs.map(d => d.data()); rate(); }, () => { rErr = true; rts = []; rate(); });
+  }
+  async function vote(d, sp, v) {
+    if (!user || admin || d > today) return;
+    const id = `${d}_${sp}_${user.uid}`, cur = rstat(d, sp).mine;
+    try {
+      if (cur === v) await deleteDoc(doc(db, 'ratings', id));
+      else await setDoc(doc(db, 'ratings', id), { date: d, sport: sp, uid: user.uid, name: (profile && profile.name) || '', stars: v, ts: Date.now() });
+      toast(cur === v ? 'Az értékelésed törölve.' : `Köszi! ${v} ★ értékelést adtál.`);
+    } catch (x) { toast('Az értékelés nem sikerült: ' + (x.code || x.message), 'err'); }
+  }
+  $('.tlog').addEventListener('click', e => {
+    const b = e.target.closest('.star'); if (!b || b.disabled) return;
+    const r = b.closest('.rate'); vote(r.dataset.rd, r.dataset.rs, +b.dataset.v);
+  });
+  function scores() {
+    const l = matches(), d = dayDate(), inDay = x => x.date === d, inSp = x => sportOf(x) === st.s;
+    const nm = SPORTS.find(x => x[0] === st.s), sn = nm ? nm[1] : '';
+    const dl = st.v === 'tomorrow' ? 'Holnap' : st.v === 'date' ? 'Napi' : 'Ma';
+    const bx = (lab, c) => { const dec = c.n - c.p, loss = dec - c.w; return `<div class="sbx2"><small>${lab}</small>${scH(c)}<div class="bar"><u style="width:${dec ? Math.round(c.w / dec * 100) : 0}%"></u></div><em>${dec ? Math.round(c.w / dec * 100) + '% találat' : 'még nincs lezárt tipp'}${c.p ? ' · ' + c.p + ' függőben' : ''}</em></div>`; };
+    $('#sbar').innerHTML = bx(`${dl} · ${esc(sn)}`, cnt(all.filter(x => inDay(x) && inSp(x)))) + bx(`${dl} · összes sportág`, cnt(all.filter(inDay))) + bx(`Összes nap · ${esc(sn)}`, cnt(all.filter(inSp))) + bx('Összes nap · mind', cnt(all));
+    $('#tlSub').innerHTML = (st.v === 'all' ? 'összes nap' : huDate(curDate())) + ' · ' + l.length + ' tipp · ' + scH(cnt(l));
+  }
   const matches = () => {
     let l = all.filter(t => sportOf(t) === st.s);
     if (st.v !== 'all') l = l.filter(t => t.date === curDate());
@@ -282,11 +329,12 @@ function tippekPage() {
     return l.sort(st.v === 'all' ? (a, b) => b.date.localeCompare(a.date) || tk(a).localeCompare(tk(b)) : (a, b) => tk(a).localeCompare(tk(b)));
   };
   function tabs() {
-    $('#sTabs').innerHTML = SPORTS.map(([k, n, e]) => `<a href="#" data-s="${k}" class="${st.s === k ? 'on' : ''}">${e} ${n} <small>${all.filter(t => sportOf(t) === k && (st.v === 'all' || t.date === curDate())).length}</small></a>`).join('');
+    $('#sTabs').innerHTML = SPORTS.map(([k, n, e]) => `<a href="#" data-s="${k}" class="${st.s === k ? 'on' : ''}">${e} ${n} <small>${scH(cnt(all.filter(t => sportOf(t) === k && (st.v === 'all' || t.date === curDate()))))}</small></a>`).join('');
     $('#vTabs').innerHTML = [['today', 'Mai'], ['tomorrow', 'Holnapi'], ['date', 'Dátum szerint'], ['all', 'Összes']].map(([k, n]) => `<a href="#" data-v="${k}" class="${st.v === k ? 'on' : ''}">${n}</a>`).join('');
     $('#dRow').hidden = st.v !== 'date'; $('#dpick').value = st.d;
     $('#sTabs').querySelectorAll('[data-s]').forEach(a => a.onclick = e => { e.preventDefault(); st.s = a.dataset.s; sync(); tabs(); list(); });
     $('#vTabs').querySelectorAll('[data-v]').forEach(a => a.onclick = e => { e.preventDefault(); st.v = a.dataset.v; sync(); tabs(); list(); });
+    watchR(); rate();
   }
   function list() {
     if (!loaded) return;
@@ -295,12 +343,16 @@ function tippekPage() {
     pending = false;
     const l = matches();
     $('#tsum').innerHTML = summary(l);
-    $('#tlSub').textContent = (st.v === 'all' ? 'összes nap' : huDate(curDate())) + ' · ' + l.length + ' tipp';
+    scores();
+    if (st.v !== 'all') $('#rbox').innerHTML = rateHtml(curDate(), st.s, l.length > 0, false);
+    let lastD = '';
     $('#tlist').innerHTML = l.length ? l.map(t => {
+      let dh = '';
+      if (st.v === 'all' && t.date !== lastD) { lastD = t.date; dh = `<div class="dayh"><span>${huDate(t.date)}</span>${scH(cnt(l.filter(x => x.date === t.date)))}${rateHtml(t.date, st.s, true, true)}</div>`; }
       const s = effStatus(t), ot = sportOf(t) === 'jegkorong' && otFlag(t.result);
       const odds = t.odds > 1 ? ` <span class="od">@${Number(t.odds).toFixed(2)}</span>` : '';
       const who = t.tipster || '?';
-      return `<div class="tl st-${s}" data-id="${t.id}"><div class="tlm"><div class="tn">${esc(t.home)} – ${esc(t.away)} ${esc(t.date)}</div>
+      return dh + `<div class="tl st-${s}" data-id="${t.id}"><div class="tlm"><div class="tn">${esc(t.home)} – ${esc(t.away)} ${esc(t.date)}</div>
       <div class="ts">${t.league ? `<span class="lg">${esc(t.league)}</span> · ` : ''}${t.time ? esc(t.time) + ' · ' : ''}Tipp: <b>${esc(t.pick)}</b>${odds} · Tippadó: <b class="tp">${esc(who)}</b>${isAdminName(who) ? ' <i class="tag">Admin</i>' : ''}</div></div>
       <div class="tlr">${admin ? `<input class="rb" data-id="${t.id}" value="${esc(t.result || '')}" placeholder="3-2" maxlength="20" aria-label="Végeredmény">` : `<span class="rb ro ${t.result ? '' : 'e'}">${esc(t.result || '3-2')}</span>`}
       ${admin ? `<button class="icb" data-cy="${t.id}" title="Állapot váltása (eredmény alapján automatikus)">${ICON[s]}</button>` : ICON[s]}${ot ? '<span class="ic ot" title="Hosszabbítás / szétlövés">🏒</span>' : ''}
@@ -326,7 +378,7 @@ function tippekPage() {
         const row = i.closest('.tl'), s = effStatus(t);
         row.className = 'tl st-' + s;
         const ib = row.querySelector('.icb'); if (ib) ib.innerHTML = ICON[s];
-        $('#tsum').innerHTML = summary(matches());
+        $('#tsum').innerHTML = summary(matches()); scores(); tabs();
         clearTimeout(i._tm); i._tm = setTimeout(save, 600);
       };
       i.onkeydown = e => { if (e.key === 'Enter') i.blur(); };
