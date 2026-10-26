@@ -41,15 +41,18 @@ function toast(msg, type = 'ok') {
 const flashNext = (m, t = 'ok') => sessionStorage.setItem('vg_flash', JSON.stringify([m, t]));
 function showStoredFlash() { try { const f = JSON.parse(sessionStorage.getItem('vg_flash') || 'null'); if (f) { sessionStorage.removeItem('vg_flash'); toast(f[0], f[1]); } } catch (e) { } }
 
+const picOf = p => (p && typeof p.avatar === 'string' && p.avatar.startsWith('data:image/')) ? p.avatar : '';
+
 /* ---------- oldalváz ---------- */
 function layout() {
+  if (!document.querySelector('link[rel=manifest]')) document.head.insertAdjacentHTML('beforeend', '<link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="VikingGOLD">');
   const nav = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['updates', '/updates', 'Updates'], ['chat', '/chat', 'Chat'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
   $('#hdr').innerHTML = `
 <header class="top">
   <a class="logo" href="/" aria-label="VikingGOLD"><span class="mark"><svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdc82"/><stop offset=".55" stop-color="#f5b83d"/><stop offset="1" stop-color="#d98e0b"/></linearGradient></defs><path d="M24 3 42 10v14c0 10-7.5 17.5-18 21C13.5 41.5 6 34 6 24V10z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M14 16l10 18 10-18" fill="none" stroke="url(#lg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="wm">Viking<b>GOLD</b></span></a>
   <button class="burger" id="burger" aria-label="Menü" aria-expanded="false"><i></i><i></i><i></i></button>
   <nav class="nav" id="nav">${nav.map(([k, h, l]) => `<a href="${h}" class="${page === k ? 'on' : ''}">${l}</a>`).join('')}</nav>
-  <div class="usr" id="usr"><button class="uic" id="uic" aria-haspopup="true" aria-expanded="false" aria-label="Fiók"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>${user ? '<i class="dot"></i>' : ''}</button>
+  <div class="usr" id="usr"><button class="uic" id="uic" aria-haspopup="true" aria-expanded="false" aria-label="Fiók">${picOf(profile) ? `<img src="${picOf(profile)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">` : `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>`}${user ? '<i class="dot"></i>' : ''}</button>
     <div class="menu" id="umenu" hidden>${user
       ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : 'Tag'}</small></div><a href="/tippek">Tippek</a><a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
@@ -141,7 +144,7 @@ function homePage() {
     list = list.filter(u => !u.disabled).sort((a, b) => (isAdminName(b.name) - isAdminName(a.name)) || (a.created || 0) - (b.created || 0) || String(a.name).localeCompare(String(b.name)));
     $('#stPlayers').textContent = list.length;
     $('#plCount').textContent = '(' + list.length + ')';
-    $('#plist').innerHTML = list.length ? list.map(u => `<span class="chip ${isAdminName(u.name) ? 'adm' : ''}">${esc(u.name || '?')}${isAdminName(u.name) ? ' <i>Admin · Tippadó</i>' : ''}</span>`).join('') : '<span class="small">Még nincs regisztrált játékos.</span>';
+    $('#plist').innerHTML = list.length ? list.map(u => `<span class="chip ${isAdminName(u.name) ? 'adm' : ''}">${picOf(u) ? `<img src="${picOf(u)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;margin:-2px 2px -2px -6px">` : ''}${esc(u.name || '?')}${isAdminName(u.name) ? ' <i>Admin · Tippadó</i>' : ''}</span>`).join('') : '<span class="small">Még nincs regisztrált játékos.</span>';
   };
   let lastUsers = null;
   onSnapshot(collection(db, 'admins'), sn => { ADMIN_SET = new Set([...RESERVED, ...sn.docs.map(d => String(d.data().name || '').toLowerCase())]); $('#stTipsters').textContent = Math.max(sn.size, 1); if (lastUsers) renderPl(lastUsers); }, () => { $('#stTipsters').textContent = ADMIN_NAMES.length; });
@@ -557,6 +560,12 @@ function settingsPage() {
   const admin = isAdmin();
   const NAME_RE = /^[A-Za-z0-9_.\-]{3,20}$/;
   root.innerHTML = `<section class="wrap" style="padding-top:26px"><h1>Beállítások</h1>
+  <div class="card" id="picCard"><h2>Profilkép</h2>
+    <div class="row" style="gap:18px;align-items:center">
+      <div id="picPrev" style="flex:none;width:96px;height:96px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:800;font-size:2.2rem;color:#1a1204;background:linear-gradient(135deg,#ffe29a,#d99a1c);border:2px solid rgba(246,196,83,.5)"></div>
+      <div style="flex:1;min-width:220px"><p class="small" style="margin:0 0 10px">Ezt a képet látja mindenki a chatben, a tagok listáján és a kezdőlapon. Bármilyen képet választhatsz, a közepét négyzetre vágjuk és lekicsinyítjük.</p>
+      <div class="row"><label class="btn sm ghost" for="picFile" style="margin:0;cursor:pointer">Kép kiválasztása</label><input id="picFile" type="file" accept="image/*" hidden>
+      <button class="btn sm" id="picSave" type="button" disabled>Mentés</button><button class="btn sm danger" id="picDel" type="button">Eltávolítás</button></div></div></div></div>
   <div class="g2" style="align-items:start">
     <div class="card"><h2>Fiók</h2>
       <p style="margin:0 0 4px"><span class="small">E-mail</span><br><b>${esc(user.email)}</b> ${user.emailVerified || admin ? '<span class="pill g">megerősítve</span>' : '<span class="pill y">nincs megerősítve</span>'}</p>
@@ -574,6 +583,41 @@ function settingsPage() {
     <p class="hint" style="margin:12px 0 0">A „Név” gomb átírja a tag felhasználónevét. Más jelszavát biztonsági okból nem lehet közvetlenül beállítani: a „Jelszó-mail” gomb levelet küld a tagnak, amiben ő választ újat (a link 5 percig érvényes, és csak a legutóbb kért levél működik). A „Törlés” eltávolítja a profilját és letiltja a hozzáférését (a neve felszabadul). A bejelentkezési adata a Firebase Console → Authentication → Users listán egy kattintással véglegesen is törölhető.</p></div>` : ''}
   </section>`;
   showStoredFlash();
+
+  /* profilkép */
+  let newPic = '';
+  const drawPrev = src => { const p = $('#picPrev'); p.innerHTML = src ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover">` : esc((profile.name || '?').replace(/^[_.\-]+/, '').charAt(0).toUpperCase()); };
+  drawPrev(picOf(profile)); if (!picOf(profile)) $('#picDel').hidden = true;
+  const toSquare = file => new Promise((ok, no) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onerror = () => { URL.revokeObjectURL(url); no(new Error('A fájl nem olvasható képként.')); };
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S;
+      const side = Math.min(im.naturalWidth, im.naturalHeight), sx = (im.naturalWidth - side) / 2, sy = (im.naturalHeight - side) / 2;
+      const cx = cv.getContext('2d'); cx.fillStyle = '#0a0d15'; cx.fillRect(0, 0, S, S); cx.imageSmoothingQuality = 'high'; cx.drawImage(im, sx, sy, side, side, 0, 0, S, S);
+      let out = cv.toDataURL('image/webp', .85); if (!out.startsWith('data:image/webp')) out = cv.toDataURL('image/jpeg', .85);
+      for (let q = .75; out.length > 40000 && q > .3; q -= .15) out = cv.toDataURL('image/jpeg', q);
+      out.length > 60000 ? no(new Error('A kép túl nagy, válassz másikat.')) : ok(out);
+    };
+    im.src = url;
+  });
+  $('#picFile').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (!/^image\//.test(f.type)) { toast('Csak képet választhatsz.', 'err'); return; }
+    if (f.size > 15e6) { toast('A kép túl nagy (max 15 MB).', 'err'); return; }
+    try { newPic = await toSquare(f); drawPrev(newPic); $('#picSave').disabled = false; } catch (x) { toast(x.message, 'err'); }
+  };
+  $('#picSave').onclick = async () => {
+    if (!newPic) return; $('#picSave').disabled = true;
+    try { await updateDoc(doc(db, 'users', user.uid), { avatar: newPic }); flashNext('A profilképed mentve.'); location.reload(); }
+    catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); $('#picSave').disabled = false; }
+  };
+  $('#picDel').onclick = async () => {
+    if (!confirm('Eltávolítod a profilképed?')) return;
+    try { await updateDoc(doc(db, 'users', user.uid), { avatar: '' }); flashNext('A profilképed eltávolítva.'); location.reload(); }
+    catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
+  };
 
   $('#nameForm').onsubmit = async e => {
     e.preventDefault();
@@ -669,15 +713,8 @@ async function loadCommunity() {
     if (page === 'updates') m.updatesPage(ctx); else m.chatPage(ctx);
   } catch (e) { $('#main').innerHTML = infoView('⚠️', 'Betöltési hiba', esc(String((e && e.message) || e))); }
 }
-async function updBadge() {
-  try {
-    const s = await getDocs(query(collection(db, 'updates'), orderBy('created', 'desc'), limit(1)));
-    if (s.empty) return;
-    if ((s.docs[0].data().created || 0) > (+localStorage.getItem('vg_upd_seen') || 0)) {
-      const a = document.querySelector('#nav a[href="/updates"]');
-      if (a) a.insertAdjacentHTML('beforeend', '<i style="display:inline-block;width:8px;height:8px;margin-left:7px;border-radius:50%;background:#ff5468;box-shadow:0 0 8px #ff5468;vertical-align:middle"></i>');
-    }
-  } catch (e) { }
+async function loadNotify() {
+  try { const m = await import('./notify.js'); m.init({ app, db, auth, user, profile, esc, $, page }); } catch (e) { }
 }
 
 /* ---------- indítás ---------- */
@@ -696,7 +733,7 @@ async function start(u) {
   else if (page === 'home') homePage();
   else if (page === 'settings') settingsPage();
   else if (page === 'updates' || page === 'chat') loadCommunity();
-  if (page !== 'updates') updBadge();
+  if (user && profile && !profile.disabled && (user.emailVerified || isAdmin())) loadNotify();
   if (page !== 'tippek' && page !== 'settings') showStoredFlash();
 }
 
