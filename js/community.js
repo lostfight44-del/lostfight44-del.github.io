@@ -153,7 +153,7 @@ export function chatPage(c) {
   const col = n => { let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h},58%,52%)`; };
   const uMap = {};
   const picOf = uid => { const a = uid === me.uid ? (uMap[uid] && uMap[uid].avatar) || profile.avatar : uMap[uid] && uMap[uid].avatar; return typeof a === 'string' && a.startsWith('data:image/') ? a : ''; };
-  const av = (n, adm, uid) => { const p = picOf(uid); return p ? `<div class="av pic"><img src="${p}" alt="" loading="lazy"></div>` : `<div class="av" style="background:${adm ? 'linear-gradient(135deg,#ffe29a,#d99a1c)' : col(n)};${adm ? 'color:#1a1204' : ''}">${esc(String(n).replace(/^[_.\-]+/, '').charAt(0).toUpperCase() || '?')}</div>`; };
+  const av = (n, adm, uid) => { const p = picOf(uid); return p ? `<div class="av pic"><img src="${p}" alt="" loading="lazy"></div>` : `<div class="av" style="background:${adm ? 'linear-gradient(135deg,#ff6b7d,#be123c)' : col(n)};${adm ? 'color:#fff' : ''}">${esc(String(n).replace(/^[_.\-]+/, '').charAt(0).toUpperCase() || '?')}</div>`; };
   const roomOf = k => ROOMS.find(r => r[0] === k);
   const dayLabel = d => { const t = ymd(new Date()), y = ymd(new Date(Date.now() - 864e5)); return d === t ? 'Ma' : d === y ? 'Tegnap' : huDate(d); };
   const fmt = t => String(t).split(URL_RE).map((p, i) => i % 2
