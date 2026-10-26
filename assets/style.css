@@ -183,3 +183,91 @@ td.acts{display:flex;gap:6px;flex-wrap:wrap}
 .pin{flex:1;min-width:0}.pin small{display:block;color:var(--mu);font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .pin b{display:block;font-size:1.05rem;word-break:break-all}.pin span{color:var(--gold2);font-size:.85rem;font-weight:600}
 @media(max-width:640px){.people{grid-template-columns:1fr}}
+
+/* ===== VikingGOLD – v4 PRO design (felülírja a fentieket) ===== */
+:root{
+  --bg:#05070d; --bg2:#090d16; --sf:#0c111c; --sf2:#111827; --bd:rgba(148,163,184,.13); --bd2:rgba(148,163,184,.26);
+  --tx:#f1f5f9; --mu:#94a3b8; --mu2:#64748b;
+  --gold:#f6c453; --gold2:#ffe29a; --gold3:#d99a1c;
+  --ok:#2dd4a0; --bad:#fb5a6e; --in:#070a12; --r:16px;
+  --sh:0 24px 60px -24px rgba(0,0,0,.9), 0 0 0 1px rgba(148,163,184,.06);
+  --font:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --head:"Sora","Inter",ui-sans-serif,system-ui,sans-serif;
+}
+body{background-color:var(--bg);font-size:16px;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(1000px 520px at 50% -160px,rgba(246,196,83,.16),transparent 70%),radial-gradient(700px 480px at 105% 12%,rgba(56,189,248,.09),transparent 70%),radial-gradient(600px 420px at -10% 38%,rgba(139,92,246,.08),transparent 70%)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(rgba(148,163,184,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.045) 1px,transparent 1px);background-size:56px 56px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 0,#000 0,transparent 72%);mask-image:radial-gradient(ellipse at 50% 0,#000 0,transparent 72%)}
+h1,h2,h3,.wm,.stat b,.sect-t,.eyebrow{font-family:var(--head)}
+h1{font-weight:800;letter-spacing:-.035em}
+h2{font-weight:700;letter-spacing:-.02em}
+p{color:#b6c0d1}
+::selection{background:rgba(246,196,83,.35)}
+
+/* fejléc */
+.top{height:72px;background:rgba(5,7,13,.72);border-bottom:1px solid var(--bd)}
+.wm{font-size:1.28rem;font-weight:800;letter-spacing:-.04em}
+.nav a{font-weight:600;font-size:.92rem;letter-spacing:.01em;border-radius:10px;position:relative}
+.nav a.on{color:var(--gold2);background:linear-gradient(180deg,rgba(246,196,83,.16),rgba(246,196,83,.06));box-shadow:inset 0 0 0 1px rgba(246,196,83,.25)}
+.uic{background:linear-gradient(180deg,var(--sf2),var(--sf));border-color:var(--bd2)}
+.menu{background:rgba(12,17,28,.96);backdrop-filter:blur(16px);border:1px solid var(--bd2);border-radius:14px;box-shadow:var(--sh)}
+
+/* gombok */
+.btn{background:linear-gradient(135deg,#ffe29a 0%,#f6c453 48%,#d99a1c 100%);color:#1a1204!important;font-weight:800;letter-spacing:.01em;border:0;border-radius:12px;
+  box-shadow:0 10px 28px -10px rgba(246,196,83,.65),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .18s,box-shadow .18s,filter .18s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 16px 34px -10px rgba(246,196,83,.75),inset 0 1px 0 rgba(255,255,255,.55)}
+.btn:active{transform:translateY(0)}
+.btn.ghost{background:rgba(148,163,184,.07);color:var(--tx)!important;box-shadow:inset 0 0 0 1px var(--bd2)}
+.btn.ghost:hover{background:rgba(246,196,83,.1);color:var(--gold2)!important;box-shadow:inset 0 0 0 1px rgba(246,196,83,.5)}
+.btn.danger{background:rgba(251,90,110,.12);color:#ff8d9b!important;box-shadow:inset 0 0 0 1px rgba(251,90,110,.4)}
+
+/* kártyák, űrlapok */
+.card,.panel{background:linear-gradient(180deg,rgba(17,24,39,.85),rgba(10,14,24,.92));border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh)}
+input,select,textarea{background:var(--in);border:1px solid var(--bd2);border-radius:12px;color:var(--tx);transition:border-color .18s,box-shadow .18s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(246,196,83,.15);outline:0}
+label{font-weight:600;font-size:.84rem;color:#cbd5e1;letter-spacing:.02em}
+.tabs a.on{background:linear-gradient(135deg,#ffe29a,#f6c453);color:#1a1204}
+.flash{border-radius:12px}
+
+/* főoldal */
+.hero{padding:84px 20px 54px;text-align:center}
+.eyebrow{display:inline-block;padding:8px 16px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold2);
+  background:rgba(246,196,83,.08);box-shadow:inset 0 0 0 1px rgba(246,196,83,.28);margin-bottom:22px}
+.hero h1{font-size:clamp(2.4rem,6.4vw,4.4rem);line-height:1.04;letter-spacing:-.045em;max-width:880px;margin:0 auto 20px}
+.lead{max-width:660px;margin:0 auto 32px;font-size:1.12rem;line-height:1.7;color:#a9b4c6}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.cta .btn{padding:15px 28px;font-size:1rem}
+.stats{gap:14px}
+.stat{background:linear-gradient(180deg,rgba(17,24,39,.8),rgba(10,14,24,.9));border:1px solid var(--bd);border-radius:var(--r);padding:22px 18px;text-align:center;position:relative;overflow:hidden}
+.stat::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.7}
+.stat b{font-size:2.1rem;letter-spacing:-.04em;color:var(--gold2)}
+.stat span{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mu);font-weight:600}
+.sect-t{font-size:clamp(1.5rem,3vw,2rem);letter-spacing:-.03em;margin:46px 0 18px}
+.sp{background:linear-gradient(180deg,rgba(17,24,39,.85),rgba(10,14,24,.95));border:1px solid var(--bd);border-radius:var(--r);transition:transform .22s,border-color .22s,box-shadow .22s}
+.sp:hover{transform:translateY(-5px);border-color:rgba(246,196,83,.55);box-shadow:0 22px 44px -22px rgba(246,196,83,.45)}
+.sp b{font-family:var(--head);letter-spacing:-.02em}
+.chip{background:rgba(148,163,184,.08);border:1px solid var(--bd);border-radius:999px}
+.chip.adm{background:rgba(246,196,83,.12);border-color:rgba(246,196,83,.45);color:var(--gold2)}
+.banner{background:linear-gradient(120deg,rgba(246,196,83,.14),rgba(56,189,248,.07) 60%,rgba(139,92,246,.08));border:1px solid rgba(246,196,83,.3);border-radius:20px;padding:28px 30px}
+.banner h3{font-family:var(--head);font-size:1.25rem;letter-spacing:-.02em}
+
+/* tippek */
+.tl{background:linear-gradient(180deg,rgba(17,24,39,.8),rgba(10,14,24,.92));border:1px solid var(--bd);border-radius:14px;transition:border-color .2s,transform .2s}
+.tl:hover{border-color:var(--bd2);transform:translateY(-1px)}
+.tl.st-win{border-color:rgba(45,212,160,.45);box-shadow:inset 3px 0 0 var(--ok)}
+.tl.st-loss{border-color:rgba(251,90,110,.4);box-shadow:inset 3px 0 0 var(--bad)}
+.tn{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
+.rb{border-radius:10px;font-weight:800}
+.tlh span{font-family:var(--head);letter-spacing:-.02em}
+.sbx{background:rgba(17,24,39,.8);border:1px solid var(--bd);border-radius:14px}
+.pill{border-radius:999px;font-weight:700;letter-spacing:.03em}
+
+/* táblázat, lábléc */
+table{border-collapse:separate;border-spacing:0}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mu2)}
+.foot{background:linear-gradient(180deg,transparent,rgba(5,7,13,.9));border-top:1px solid var(--bd);margin-top:60px}
+.foot b{font-family:var(--head);letter-spacing:-.03em;font-size:1.2rem}
+.foot .small{line-height:1.7}
+@media(max-width:760px){.hero{padding:54px 16px 38px}.lead{font-size:1rem}.banner{padding:22px 20px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
