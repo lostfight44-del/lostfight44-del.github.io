@@ -406,3 +406,23 @@ input:hover,select:hover,textarea:hover{border-color:rgba(246,196,83,.35)}
 .chip.adm{background:rgba(255,84,104,.12)!important;border-color:rgba(255,84,104,.5)!important;color:#ffb3bd!important}
 .chip.adm i{color:#ff5468!important}
 .pill.v{background:rgba(255,84,104,.12)!important;border-color:rgba(255,84,104,.5)!important;color:#ff8d9b!important}
+
+/* ===== Kezdőlap: heti / havi statisztika ===== */
+.pstats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:10px}
+.pstats .card{margin-bottom:0}
+.psx{grid-column:1/-1;text-align:center}.psx .big{font-size:2rem}
+.psh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.psh span{border-left:3px solid var(--gold);padding-left:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.82rem}
+.psh small{color:var(--mu);font-weight:600}
+.pct{display:flex;align-items:baseline;gap:12px;margin:8px 0 6px}
+.pct b{font-family:var(--head);font-size:3.2rem;line-height:1;font-weight:800;letter-spacing:-.04em;background:linear-gradient(120deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pct span{color:var(--mu);font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+.ps .bar{height:6px;border-radius:6px;background:rgba(148,163,184,.15);overflow:hidden}
+.ps .bar u{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#7ef0c8);border-radius:6px;transition:width .6s}
+.psn{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;font-size:.88rem;color:var(--mu);font-weight:600}
+.psn b.sw{color:var(--ok)}.psn b.sl{color:var(--bad)}
+.psp{margin:12px 0 0;font-size:.86rem;color:var(--mu)}.psp b{color:var(--gold2)}.psp .sc{font-size:.9rem;margin-left:4px}
+.pss{margin-top:16px;padding-top:6px;border-top:1px solid var(--bd)}
+.psr{display:grid;grid-template-columns:1fr auto 54px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:.92rem}
+.psr:last-child{border-bottom:0}.psr .pp{text-align:right;font-family:var(--head);color:var(--gold2)}
+@media(max-width:760px){.pstats{grid-template-columns:1fr}.pct b{font-size:2.7rem}}
