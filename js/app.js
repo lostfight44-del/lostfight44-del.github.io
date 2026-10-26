@@ -150,29 +150,72 @@ function statRanges() {
   };
 }
 /* tips: tömb = adatok, null = csak tagoknak, undefined = betöltési hiba */
+function statCss() {
+  if (document.getElementById('vgs-css')) return;
+  const st = document.createElement('style'); st.id = 'vgs-css';
+  st.textContent = `
+#statBox{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:0 0 14px;text-align:left}
+.vgs{position:relative;overflow:hidden;min-width:0;padding:24px 24px 18px;border-radius:20px;border:1px solid rgba(148,163,184,.16);background:linear-gradient(180deg,rgba(17,24,39,.88),rgba(10,14,24,.94));box-shadow:0 24px 60px -30px #000;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.vgs::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,#f6c453,transparent)}
+.vgs-x{grid-column:1/-1;text-align:center;padding:30px 20px}.vgs-x .big{font-size:2rem}.vgs-x p{margin:8px 0 0;color:#94a3b8}
+.vgs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px}
+.vgs-h span{font-weight:800;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;color:#ffe29a}
+.vgs-h small{font-size:.8rem;color:#94a3b8;font-weight:600}
+.vgs-main{display:flex;align-items:flex-end;gap:16px;margin:16px 0 14px}
+.vgs-pct{font-size:3.6rem;line-height:.9;font-weight:800;letter-spacing:-.04em;color:#ffe29a;font-variant-numeric:tabular-nums}
+.vgs-pct i{font-style:normal;font-size:1.7rem;margin-left:2px;color:#f6c453}
+.vgs-lab{padding-bottom:3px;display:flex;flex-direction:column;gap:2px}
+.vgs-lab b{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:#e2e8f0}
+.vgs-lab span{font-size:.82rem;color:#94a3b8}
+.vgs-bar{height:8px;border-radius:8px;background:rgba(148,163,184,.16);overflow:hidden}
+.vgs-bar u{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,#2dd4a0,#7ef0c8);transition:width .6s}
+.vgs-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:16px}
+.vgs-c{padding:10px 4px;border-radius:12px;text-align:center;border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.03)}
+.vgs-c b{display:block;font-size:1.35rem;line-height:1.2;font-weight:800;color:#f1f5f9;font-variant-numeric:tabular-nums}
+.vgs-c span{display:block;margin-top:2px;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vgs-c.w{border-color:rgba(45,212,160,.4);background:rgba(45,212,160,.07)}.vgs-c.w b{color:#2dd4a0}
+.vgs-c.l{border-color:rgba(251,90,110,.4);background:rgba(251,90,110,.07)}.vgs-c.l b{color:#fb5a6e}
+.vgs-cmp{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:14px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.03);font-size:.86rem;color:#94a3b8}
+.vgs-cmp b{color:#ffe29a;font-size:1rem}.vgs-cmp em{font-style:normal;color:#94a3b8}
+.vgs-cmp i{font-style:normal;font-weight:800;margin-left:auto}.vgs-cmp i.up{color:#2dd4a0}.vgs-cmp i.dn{color:#fb5a6e}.vgs-cmp i.eq{color:#94a3b8}
+.vgs-tot{margin:10px 2px 0;font-size:.78rem;color:#64748b}
+.vgs-sp{margin-top:14px;padding-top:6px;border-top:1px solid rgba(148,163,184,.14)}
+.vgs-r{display:grid;grid-template-columns:minmax(104px,1.1fr) minmax(40px,1fr) 44px 46px;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.1);font-size:.9rem;color:#e2e8f0}
+.vgs-r:last-child{border-bottom:0}
+.vgs-r .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vgs-r .m{height:5px;border-radius:5px;background:rgba(148,163,184,.16);overflow:hidden}.vgs-r .m u{display:block;height:100%;background:#2dd4a0;border-radius:5px}
+.vgs-r .s{text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vgs-r b{text-align:right;color:#ffe29a;font-variant-numeric:tabular-nums}
+@media(max-width:760px){#statBox{grid-template-columns:minmax(0,1fr)}.vgs{padding:20px 18px 14px}.vgs-pct{font-size:3rem}}`;
+  document.head.appendChild(st);
+}
 function homeStats(tips, err) {
   try { homeStatsDraw(tips, err); }
   catch (e) { const b = $('#statBox'); if (b) b.innerHTML = `<div class="card psx"><div class="big">⚠️</div><p class="small" style="font-size:.95rem">A statisztika kiszámítása nem sikerült.</p><p class="small" style="word-break:break-word;color:var(--bad)">${esc(String((e && e.message) || e))}</p></div>`; }
 }
 function homeStatsDraw(tips, err) {
   const box = $('#statBox'); if (!box) return;
+  statCss();
   if (!tips) {
     const msg = tips === null ? 'A statisztikát a regisztrált, belépett tagok látják.' : 'A statisztika most nem tölthető be.' + (err ? `<br><span style="color:var(--bad);word-break:break-word">${esc(String(err.code || err.message || err))}</span>` : '');
     const cta = tips === null ? '<div class="row" style="justify-content:center;margin-top:14px"><a class="btn" href="/auth?mode=register">Regisztráció</a><a class="btn ghost" href="/auth?mode=login">Belépés</a></div>' : '';
-    box.innerHTML = `<div class="card psx"><div class="big">${tips === null ? '🔒' : '⚠️'}</div><p class="small" style="font-size:.95rem">${msg}</p>${cta}</div>`;
+    box.innerHTML = `<div class="vgs vgs-x"><div class="big">${tips === null ? '🔒' : '⚠️'}</div><p style="font-size:.95rem">${msg}</p>${cta}</div>`;
     return;
   }
   const R = statRanges(), inR = (t, r) => String(t.date || '') >= r[0] && String(t.date || '') < r[1];
   const tally = l => { const r = { w: 0, l: 0, v: 0, p: 0 }; l.forEach(t => { let st = 'pend'; try { st = effStatus(t); } catch (e) { } r[{ win: 'w', loss: 'l', void: 'v' }[st] || 'p']++; }); r.dec = r.w + r.l; r.pct = r.dec ? Math.round(r.w / r.dec * 100) : null; r.all = l.length; return r; };
   const pc = r => r.pct == null ? '–' : r.pct + '%';
   const card = (title, range, cur, prev, prevLab, list) => {
-    const sp = SPORTS.map(([k, n, e]) => { const r = tally(list.filter(t => sportOf(t) === k)); return r.all ? `<div class="psr"><span>${e} ${n}</span><span class="sc"><b class="sw">${r.w}</b><i>|</i><b>${r.dec}</b></span><b class="pp">${pc(r)}</b></div>` : ''; }).join('');
-    return `<div class="card ps"><div class="psh"><span>${title}</span><small>${range}</small></div>
-      <div class="pct"><b>${pc(cur)}</b><span>találati arány</span></div>
-      <div class="bar"><u style="width:${cur.pct || 0}%"></u></div>
-      <div class="psn"><span title="Nyert">✔ <b class="sw">${cur.w}</b> nyert</span><span title="Vesztett">✕ <b class="sl">${cur.l}</b> vesztett</span><span title="Érvénytelen">↩ ${cur.v}</span><span title="Függőben">⏳ ${cur.p}</span><span title="Az időszak összes tippje">Σ ${cur.all} tipp</span></div>
-      <p class="psp">${prevLab}: <b>${pc(prev)}</b>${prev.dec ? ` <span class="sc"><b class="sw">${prev.w}</b><i>|</i><b>${prev.dec}</b></span>` : ''}</p>
-      ${cur.all ? `<div class="pss">${sp}</div>` : '<p class="small" style="margin:14px 0 0">Ebben az időszakban még nincs tipp.</p>'}</div>`;
+    const sp = SPORTS.map(([k, n, e]) => { const r = tally(list.filter(t => sportOf(t) === k)); return r.all ? `<div class="vgs-r"><span class="n">${e} ${n}</span><span class="m"><u style="width:${r.pct || 0}%"></u></span><span class="s">${r.w} | ${r.dec}</span><b>${pc(r)}</b></div>` : ''; }).join('');
+    const dlt = cur.pct != null && prev.pct != null ? cur.pct - prev.pct : null;
+    const dh = dlt == null ? '' : `<i class="${dlt > 0 ? 'up' : dlt < 0 ? 'dn' : 'eq'}">${dlt > 0 ? '▲' : dlt < 0 ? '▼' : '='} ${Math.abs(dlt)} százalékpont</i>`;
+    return `<div class="vgs"><div class="vgs-h"><span>${title}</span><small>${range}</small></div>
+      <div class="vgs-main"><div class="vgs-pct">${cur.pct == null ? '–' : cur.pct + '<i>%</i>'}</div><div class="vgs-lab"><b>találati arány</b><span>${cur.dec ? cur.w + ' | ' + cur.dec + ' lezárt tipp' : 'még nincs lezárt tipp'}</span></div></div>
+      <div class="vgs-bar"><u style="width:${cur.pct || 0}%"></u></div>
+      <div class="vgs-grid"><div class="vgs-c w"><b>${cur.w}</b><span>Nyert</span></div><div class="vgs-c l"><b>${cur.l}</b><span>Vesztett</span></div><div class="vgs-c"><b>${cur.v}</b><span>Érvénytelen</span></div><div class="vgs-c"><b>${cur.p}</b><span>Függőben</span></div></div>
+      <div class="vgs-cmp"><span>${prevLab}</span><b>${pc(prev)}</b>${prev.dec ? `<em>${prev.w} | ${prev.dec}</em>` : '<em>nincs lezárt tipp</em>'}${dh}</div>
+      <p class="vgs-tot">Az időszak összes tippje: ${cur.all}</p>
+      ${cur.all ? `<div class="vgs-sp">${sp}</div>` : ''}</div>`;
   };
   const wl = tips.filter(t => inR(t, R.week)), ml = tips.filter(t => inR(t, R.month));
   box.innerHTML = card('Heti statisztika', R.weekLab, tally(wl), tally(tips.filter(t => inR(t, R.pweek))), 'Előző hét', wl) + card('Havi statisztika', R.monthLab, tally(ml), tally(tips.filter(t => inR(t, R.pmonth))), 'Előző hónap', ml);
