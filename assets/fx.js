@@ -46,6 +46,20 @@
     })(t0);
   });
 
+
+  // háttérkép: az oldallal együtt mozog lefelé (finom parallax), nem rögzített -> nem "ragad be"
+  (function () {
+    if (document.querySelector('.bgfx')) return;
+    var w = document.createElement('div'), im = document.createElement('i');
+    w.className = 'bgfx'; w.setAttribute('aria-hidden', 'true'); w.appendChild(im);
+    document.body.insertBefore(w, document.body.firstChild);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var tk = false, K = 0.22;
+    var upd = function () { tk = false; var y = Math.max(0, window.pageYOffset || document.documentElement.scrollTop || 0); im.style.transform = 'translate3d(0,' + (y * K).toFixed(1) + 'px,0)'; };
+    addEventListener('scroll', function () { if (!tk) { tk = true; requestAnimationFrame(upd); } }, { passive: true });
+    upd();
+  })();
+
   // háttér: finom szikrák
   var cv = document.getElementById('fx');
   if (cv && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
