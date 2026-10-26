@@ -134,6 +134,46 @@ function gateEvents() {
   };
 }
 
+/* ---------- kezdőlap: heti / havi statisztika (találati arány %) ---------- */
+function statRanges() {
+  const n = new Date(), d0 = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  const wk = new Date(d0); wk.setDate(d0.getDate() - ((d0.getDay() + 6) % 7));            // az aktuális hét hétfője
+  const wk2 = new Date(wk); wk2.setDate(wk.getDate() + 7);
+  const pwk = new Date(wk); pwk.setDate(wk.getDate() - 7);
+  const mo = new Date(d0.getFullYear(), d0.getMonth(), 1), mo2 = new Date(d0.getFullYear(), d0.getMonth() + 1, 1), pmo = new Date(d0.getFullYear(), d0.getMonth() - 1, 1);
+  const last = new Date(wk2); last.setDate(wk2.getDate() - 1);
+  return {
+    week: [ymd(wk), ymd(wk2)], pweek: [ymd(pwk), ymd(wk)], month: [ymd(mo), ymd(mo2)], pmonth: [ymd(pmo), ymd(mo)],
+    from: [ymd(pwk), ymd(pmo)].sort()[0],
+    weekLab: `${MONTHS[wk.getMonth() + 1]} ${wk.getDate()}. – ${MONTHS[last.getMonth() + 1]} ${last.getDate()}.`,
+    monthLab: `${mo.getFullYear()}. ${MONTHS[mo.getMonth() + 1]}`
+  };
+}
+/* tips: tömb = adatok, null = csak tagoknak, undefined = betöltési hiba */
+function homeStats(tips) {
+  const box = $('#statBox'); if (!box) return;
+  if (!tips) {
+    const msg = tips === null ? 'A statisztikát a regisztrált, belépett tagok látják.' : 'A statisztika most nem tölthető be.';
+    const cta = tips === null ? '<div class="row" style="justify-content:center;margin-top:14px"><a class="btn" href="/auth?mode=register">Regisztráció</a><a class="btn ghost" href="/auth?mode=login">Belépés</a></div>' : '';
+    box.innerHTML = `<div class="card psx"><div class="big">${tips === null ? '🔒' : '⚠️'}</div><p class="small" style="font-size:.95rem">${msg}</p>${cta}</div>`;
+    return;
+  }
+  const R = statRanges(), inR = (t, r) => String(t.date || '') >= r[0] && String(t.date || '') < r[1];
+  const tally = l => { const r = { w: 0, l: 0, v: 0, p: 0 }; l.forEach(t => { r[{ win: 'w', loss: 'l', void: 'v' }[effStatus(t)] || 'p']++; }); r.dec = r.w + r.l; r.pct = r.dec ? Math.round(r.w / r.dec * 100) : null; r.all = l.length; return r; };
+  const pc = r => r.pct == null ? '–' : r.pct + '%';
+  const card = (title, range, cur, prev, prevLab, list) => {
+    const sp = SPORTS.map(([k, n, e]) => { const r = tally(list.filter(t => sportOf(t) === k)); return r.all ? `<div class="psr"><span>${e} ${n}</span><span class="sc"><b class="sw">${r.w}</b><i>|</i><b>${r.dec}</b></span><b class="pp">${pc(r)}</b></div>` : ''; }).join('');
+    return `<div class="card ps"><div class="psh"><span>${title}</span><small>${range}</small></div>
+      <div class="pct"><b>${pc(cur)}</b><span>találati arány</span></div>
+      <div class="bar"><u style="width:${cur.pct || 0}%"></u></div>
+      <div class="psn"><span title="Nyert">✔ <b class="sw">${cur.w}</b> nyert</span><span title="Vesztett">✕ <b class="sl">${cur.l}</b> vesztett</span><span title="Érvénytelen">↩ ${cur.v}</span><span title="Függőben">⏳ ${cur.p}</span></div>
+      <p class="psp">${prevLab}: <b>${pc(prev)}</b>${prev.dec ? ` <span class="sc"><b class="sw">${prev.w}</b><i>|</i><b>${prev.dec}</b></span>` : ''}</p>
+      ${cur.all ? `<div class="pss">${sp}</div>` : '<p class="small" style="margin:14px 0 0">Ebben az időszakban még nincs tipp.</p>'}</div>`;
+  };
+  const wl = tips.filter(t => inR(t, R.week)), ml = tips.filter(t => inR(t, R.month));
+  box.innerHTML = card('Heti statisztika', R.weekLab, tally(wl), tally(tips.filter(t => inR(t, R.pweek))), 'Előző hét', wl) + card('Havi statisztika', R.monthLab, tally(ml), tally(tips.filter(t => inR(t, R.pmonth))), 'Előző hónap', ml);
+}
+
 /* ---------- kezdőlap ---------- */
 function homePage() {
   const cta = $('#ctaReg'), bn = $('#bnRow');
@@ -150,7 +190,11 @@ function homePage() {
   onSnapshot(collection(db, 'admins'), sn => { ADMIN_SET = new Set([...RESERVED, ...sn.docs.map(d => String(d.data().name || '').toLowerCase())]); $('#stTipsters').textContent = Math.max(sn.size, 1); if (lastUsers) renderPl(lastUsers); }, () => { $('#stTipsters').textContent = ADMIN_NAMES.length; });
   $('#sportTiles').innerHTML = SPORTS.map(([k, n, e]) => `<a class="sp reveal" href="/tippek?s=${k}"><span class="e">${e}</span><b>${n}</b><small>Tippek →</small></a>`).join('');
   watchUsers(list => { lastUsers = list; renderPl(list); });
-  if (user && profile && !profile.disabled && (user.emailVerified || isAdmin())) onSnapshot(query(collection(db, 'tips'), where('date', '==', ymd(new Date()))), s => { $('#stToday').textContent = s.size; }, () => { });
+  const member = user && profile && !profile.disabled && (user.emailVerified || isAdmin());
+  if (member) {
+    onSnapshot(query(collection(db, 'tips'), where('date', '==', ymd(new Date()))), s => { $('#stToday').textContent = s.size; }, () => { });
+    onSnapshot(query(collection(db, 'tips'), where('date', '>=', statRanges().from)), s => homeStats(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => homeStats(undefined));
+  } else homeStats(null);
 }
 
 
