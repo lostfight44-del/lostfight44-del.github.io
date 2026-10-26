@@ -28,7 +28,7 @@
     <div class="stat"><b id="stToday">🔒</b><span>Mai tippek</span></div>
   </div>
   <h2 class="sect-t reveal">Találati <span class="g">statisztika</span></h2>
-  <div class="pstats reveal" id="statBox"><div class="card psx"><p class="small">Betöltés…</p></div></div>
+  <div class="pstats reveal" id="statBox"><div class="card psx" data-wait><p class="small">Betöltés…</p></div></div>
   <h2 class="sect-t reveal">Válaszd ki a <span class="g">sportágad</span></h2>
   <div class="sports" id="sportTiles"></div>
   <div class="card reveal" style="margin-top:26px">
@@ -40,6 +40,7 @@
 </main>
 <div id="ftr"></div>
 <script src="/assets/fx.js"></script>
-<script type="module" src="/js/app.js"></script>
+<script type="module" src="/js/app.js?v=20261026b"></script>
+<script>setTimeout(function(){var w=document.querySelector('#statBox [data-wait]');if(w)w.innerHTML='<div class="big">⚠️</div><p class="small" style="font-size:.95rem">A statisztika nem töltődött be. Nyomj Ctrl+F5-öt (vagy privát ablakban nyisd meg). Ha így is marad, a <b>js/app.js</b> régi verziója van feltöltve.</p>'},6000)</script>
 </body>
 </html>
