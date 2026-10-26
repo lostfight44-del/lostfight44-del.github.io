@@ -12,7 +12,7 @@ try {
 } catch (e) { bootError = e; }
 /*BOOT_END*/
 
-const ADMIN_NAMES = ['_notryn', 'Kriszhhh'];                 // foglalt (admin) nevek: aki ezeket elsőként regisztrálja, az lesz az admin = tippadó
+const ADMIN_NAMES = ['_Notryn', 'Kriszhhh'];                 // foglalt (admin) nevek: aki ezeket elsőként regisztrálja, az lesz az admin = tippadó
 const RESERVED = ADMIN_NAMES.map(n => n.toLowerCase());
 const isReserved = n => RESERVED.includes(String(n || '').toLowerCase());
 let ADMIN_SET = new Set(RESERVED);                          // az admin fiókok (nevek), a Firestore "admins" gyűjteményből töltődik
@@ -43,7 +43,7 @@ function showStoredFlash() { try { const f = JSON.parse(sessionStorage.getItem('
 
 /* ---------- oldalváz ---------- */
 function layout() {
-  const nav = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['join', '/kapcsolatvetel', 'Kapcsolatvétel'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
+  const nav = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
   $('#hdr').innerHTML = `
 <header class="top">
   <a class="logo" href="/" aria-label="VikingGOLD"><span class="mark"><svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdc82"/><stop offset=".55" stop-color="#f5b83d"/><stop offset="1" stop-color="#d98e0b"/></linearGradient></defs><path d="M24 3 42 10v14c0 10-7.5 17.5-18 21C13.5 41.5 6 34 6 24V10z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M14 16l10 18 10-18" fill="none" stroke="url(#lg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="wm">Viking<b>GOLD</b></span></a>
@@ -54,7 +54,7 @@ function layout() {
       ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : 'Tag'}</small></div><a href="/tippek">Tippek</a><a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
-  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/kapcsolatvetel">Kapcsolatvétel</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
+  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
   // menü viselkedés
   const uic = $('#uic'), um = $('#umenu'), bg = $('#burger'), nv = $('#nav');
   uic.onclick = e => { e.stopPropagation(); um.hidden = !um.hidden; uic.setAttribute('aria-expanded', String(!um.hidden)); };
@@ -475,14 +475,12 @@ function contactPage() {
 /* ---------- kapcsolatvétel / Gold csoport ---------- */
 function joinPage() {
   const PEOPLE = [['msutafayolo', 'ChristianJr'], ['usnerly_', '_Notryn']];
-  $('#main').innerHTML = `<section class="wrap" style="padding-top:30px">
-  <span class="eyebrow">Kapcsolatvétel</span>
-  <h1 style="margin-top:14px">Gold csoport <span class="g">csatlakozás</span></h1>
-  <p class="small" style="font-size:1rem;max-width:620px;margin-bottom:22px">Szeretnél csatlakozni a VikingGOLD Gold csoporthoz? Vedd fel a kapcsolatot Discordon az alábbi személyek valamelyikével, ők segítenek a csatlakozásban.</p>
-  <h2 class="sect-t" style="font-size:1.2rem;margin:0 0 12px">Kivel vedd fel a kapcsolatot?</h2>
+  const box = $('#joinbox'); if (!box) return;
+  box.innerHTML = `<div class="card" style="margin-bottom:22px"><span class="eyebrow">Kapcsolatvétel</span>
+  <h2 style="font-size:1.5rem;margin-top:14px">Gold csoport <span class="g">csatlakozás</span></h2>
+  <p class="small" style="font-size:1rem;max-width:620px;margin-bottom:18px">Szeretnél csatlakozni a VikingGOLD Gold csoporthoz? Vedd fel a kapcsolatot Discordon az alábbi személyek valamelyikével, ők segítenek a csatlakozásban.</p>
   <div class="people">${PEOPLE.map(([u, n]) => `<div class="person reveal"><div class="pav">${esc(n.replace(/^_/, '').charAt(0).toUpperCase())}</div><div class="pin"><small>Discord</small><b>${esc(u)}</b><span>${esc(n)}</span></div><button class="btn sm ghost" data-copy="${esc(u)}">Másolás</button></div>`).join('')}</div>
-  <p class="small" style="margin-top:18px">Discordon keresd a felhasználónevet, és írj nekik egy rövid üzenetet.</p>
-  </section>`;
+  <p class="small" style="margin:14px 0 0">Discordon keresd a felhasználónevet, és írj nekik egy rövid üzenetet.</p></div>`;
   $('#main').querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Másolva ✔'; setTimeout(() => { b.textContent = 'Másolás'; }, 1800); }
     catch (x) { toast('A másolás nem engedélyezett, jelöld ki és másold kézzel: ' + b.dataset.copy, 'err'); }
@@ -521,17 +519,19 @@ function settingsPage() {
     const nn = $('#nn').value.trim(), lcNew = nn.toLowerCase(), lcOld = profile.name.toLowerCase(), btn = e.submitter || e.target.querySelector('[type=submit]');
     if (!NAME_RE.test(nn)) { toast('A felhasználónév 3–20 karakter lehet (angol betű, szám, _ . -).', 'err'); return; }
     if (nn === profile.name) { toast('Ez már a jelenlegi neved.', 'err'); return; }
-    if (lcNew !== lcOld && isReserved(lcNew) && !isAdmin()) { toast('Ez a név védett.', 'err'); return; }
     btn.disabled = true;
     try {
+      let oldExists = false;
       if (lcNew !== lcOld) {
         const ex = await getDoc(doc(db, 'usernames', lcNew));
         if (ex.exists() && ex.data().uid !== user.uid) throw { m: 'Ez a felhasználónév már foglalt.' };
+        if (!ex.exists() && isReserved(lcNew) && !isAdmin()) throw { m: 'Ez a név az adminoknak van fenntartva.' };
+        const oe = await getDoc(doc(db, 'usernames', lcOld)); oldExists = oe.exists() && oe.data().uid === user.uid;
       }
       const b = writeBatch(db);
-      if (lcNew !== lcOld) { b.set(doc(db, 'usernames', lcNew), { uid: user.uid }); if (!isReserved(lcOld)) b.delete(doc(db, 'usernames', lcOld)); }
+      if (lcNew !== lcOld) { b.set(doc(db, 'usernames', lcNew), { uid: user.uid }); if (oldExists && !isReserved(lcOld)) b.delete(doc(db, 'usernames', lcOld)); }
       b.update(doc(db, 'users', user.uid), { name: nn });
-      if (isAdmin()) b.update(doc(db, 'admins', user.uid), { name: nn });
+      if (isAdmin()) b.set(doc(db, 'admins', user.uid), { name: nn, uid: user.uid }, { merge: true });
       await b.commit();
       await updateProfile(auth.currentUser, { displayName: nn }).catch(() => { });
       flashNext('A felhasználóneved megváltozott.'); location.reload();
@@ -577,8 +577,9 @@ function settingsPage() {
       const lcN = nn.toLowerCase(), lcO = String(u.name || '').toLowerCase();
       try {
         if (lcN !== lcO) { const ex = await getDoc(doc(db, 'usernames', lcN)); if (ex.exists() && ex.data().uid !== u.id) { toast('Ez a név már foglalt.', 'err'); return; } if (isReserved(lcN)) { toast('Ez a név védett.', 'err'); return; } }
+        const oe = await getDoc(doc(db, 'usernames', lcO));
         const bt = writeBatch(db);
-        if (lcN !== lcO) { bt.set(doc(db, 'usernames', lcN), { uid: u.id }); bt.delete(doc(db, 'usernames', lcO)); }
+        if (lcN !== lcO) { bt.set(doc(db, 'usernames', lcN), { uid: u.id }); if (oe.exists()) bt.delete(doc(db, 'usernames', lcO)); }
         bt.update(doc(db, 'users', u.id), { name: nn });
         await bt.commit(); toast('Név módosítva: ' + nn);
       } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
@@ -611,10 +612,9 @@ async function start(u) {
   layout();
   if (page === 'auth') authPage();
   else if (page === 'tippek') tippekPage();
-  else if (page === 'contact') contactPage();
+  else if (page === 'contact') { contactPage(); joinPage(); }
   else if (page === 'home') homePage();
   else if (page === 'settings') settingsPage();
-  else if (page === 'join') joinPage();
   if (page !== 'tippek' && page !== 'settings') showStoredFlash();
 }
 
