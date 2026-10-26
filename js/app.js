@@ -579,7 +579,7 @@ function settingsPage() {
   </div>
   ${admin ? `<div class="card"><h2>Tagok kezelése <span class="small" id="mCount"></span></h2>
     <input id="mSearch" placeholder="Keresés név vagy e-mail alapján…" style="margin-bottom:12px" autocomplete="off">
-    <div class="tbl"><table><thead><tr><th>Név</th><th>E-mail</th><th>Regisztrált</th><th>Állapot</th><th>Műveletek</th></tr></thead><tbody id="mBody"><tr><td colspan="5">Betöltés…</td></tr></tbody></table></div>
+    <div class="tbl"><table><thead><tr><th>Név</th><th>E-mail</th><th>Regisztrált</th><th>Állapot</th><th>Aktivitás</th><th>Műveletek</th></tr></thead><tbody id="mBody"><tr><td colspan="6">Betöltés…</td></tr></tbody></table></div>
     <p class="hint" style="margin:12px 0 0">A „Név” gomb átírja a tag felhasználónevét. Más jelszavát biztonsági okból nem lehet közvetlenül beállítani: a „Jelszó-mail” gomb levelet küld a tagnak, amiben ő választ újat (a link 5 percig érvényes, és csak a legutóbb kért levél működik). A „Törlés” eltávolítja a profilját és letiltja a hozzáférését (a neve felszabadul). A bejelentkezési adata a Firebase Console → Authentication → Users listán egy kattintással véglegesen is törölhető.</p></div>` : ''}
   </section>`;
   showStoredFlash();
@@ -659,16 +659,26 @@ function settingsPage() {
 
   if (!admin) return;
   let users = [], mails = {}, filter = '';
+  let pres = {};
+  const ON_MS = 150000;
+  const actOf = u => {
+    const t = u.id === user.uid ? Date.now() : pres[u.id];
+    if (!t) return '<span class="small" title="Még nincs adat">–</span>';
+    if (Date.now() - t < ON_MS) return '<span style="display:inline-flex;align-items:center;gap:6px;color:#86efac;font-weight:700;font-size:.82rem"><i style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e"></i>Online</span>';
+    const d = new Date(t), hm = pad(d.getHours()) + ':' + pad(d.getMinutes()), day = ymd(d);
+    const lab = day === ymd(new Date()) ? 'ma ' + hm : day === ymd(new Date(Date.now() - 864e5)) ? 'tegnap ' + hm : pad(d.getMonth() + 1) + '.' + pad(d.getDate()) + '. ' + hm;
+    return `<span class="small" title="${esc(d.toLocaleString('hu-HU'))}" style="white-space:nowrap">${lab}</span>`;
+  };
   const draw = () => {
     const l = users.filter(u => !filter || (u.name || '').toLowerCase().includes(filter) || (mails[u.id] || '').toLowerCase().includes(filter))
       .sort((a, b) => (isAdminName(b.name) - isAdminName(a.name)) || (a.created || 0) - (b.created || 0));
-    $('#mCount').textContent = '(' + users.length + ')';
+    $('#mCount').textContent = '(' + users.length + ' · online: ' + users.filter(u => u.id === user.uid || (pres[u.id] && Date.now() - pres[u.id] < ON_MS)).length + ')';
     $('#mBody').innerHTML = l.length ? l.map(u => {
       const adm = isAdminName(u.name), me = u.id === user.uid;
       const stt = adm ? '<span class="pill v">Admin</span>' : u.disabled ? '<span class="pill r">Letiltva</span>' : '<span class="pill g">Aktív</span>';
-      return `<tr><td><b>${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td>
+      return `<tr><td><b>${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td><td>${actOf(u)}</td>
       <td class="acts"><button class="btn sm ghost" data-rs="${u.id}">Jelszó-mail</button>${adm ? '' : `<button class="btn sm ghost" data-nm="${u.id}">Név</button><button class="btn sm ghost" data-dis="${u.id}">${u.disabled ? 'Feloldás' : 'Letiltás'}</button><button class="btn sm danger" data-rm="${u.id}">Törlés</button>`}</td></tr>`;
-    }).join('') : '<tr><td colspan="5">Nincs találat.</td></tr>';
+    }).join('') : '<tr><td colspan="6">Nincs találat.</td></tr>';
     const U = id => users.find(x => x.id === id);
     $('#mBody').querySelectorAll('[data-rs]').forEach(b => b.onclick = async () => {
       const em = mails[b.dataset.rs]; if (!em) { toast('Ennek a tagnak nincs ismert e-mail címe.', 'err'); return; }
@@ -701,7 +711,9 @@ function settingsPage() {
     });
   };
   $('#mSearch').oninput = e => { filter = e.target.value.trim().toLowerCase(); draw(); };
-  onSnapshot(collection(db, 'users'), sn => { users = sn.docs.map(d => ({ id: d.id, ...d.data() })); draw(); }, x => { $('#mBody').innerHTML = `<tr><td colspan="5">Nem tölthető be: ${esc(x.code || x.message)}</td></tr>`; });
+  onSnapshot(collection(db, 'users'), sn => { users = sn.docs.map(d => ({ id: d.id, ...d.data() })); draw(); }, x => { $('#mBody').innerHTML = `<tr><td colspan="6">Nem tölthető be: ${esc(x.code || x.message)}</td></tr>`; });
+  onSnapshot(collection(db, 'presence'), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); draw(); }, () => { });
+  setInterval(draw, 60000);
   onSnapshot(collection(db, 'userEmails'), sn => { mails = {}; sn.docs.forEach(d => mails[d.id] = d.data().email); draw(); }, () => { });
 }
 
@@ -733,7 +745,11 @@ async function start(u) {
   else if (page === 'home') homePage();
   else if (page === 'settings') settingsPage();
   else if (page === 'updates' || page === 'chat') loadCommunity();
-  if (user && profile && !profile.disabled && (user.emailVerified || isAdmin())) loadNotify();
+  if (user && profile && !profile.disabled && (user.emailVerified || isAdmin())) {
+    loadNotify();
+    const beat = () => { if (!document.hidden) setDoc(doc(db, 'presence', user.uid), { name: profile.name || '', t: Date.now() }).catch(() => { }); };
+    beat(); setInterval(beat, 60000); document.addEventListener('visibilitychange', beat);
+  }
   if (page !== 'tippek' && page !== 'settings') showStoredFlash();
 }
 
