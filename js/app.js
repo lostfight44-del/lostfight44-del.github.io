@@ -1,12 +1,12 @@
 /*BOOT_START*/
-let firebaseConfig, initializeApp, getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendEmailVerification, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider;
+let firebaseConfig, initializeApp, getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendEmailVerification, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider, verifyPasswordResetCode, confirmPasswordReset, applyActionCode;
 let getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDoc, getDocs, onSnapshot, query, where, orderBy, limit, writeBatch;
 let mktList, mktDef, lineSuggest, buildPick, evalTip, otFlag;
 let bootError = null;
 try {
   ({ firebaseConfig } = await import('./firebase-config.js'));
   ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'));
-  ({ getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendEmailVerification, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'));
+  ({ getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendEmailVerification, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider, verifyPasswordResetCode, confirmPasswordReset, applyActionCode } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'));
   ({ getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDoc, getDocs, onSnapshot, query, where, orderBy, limit, writeBatch } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'));
   ({ mktList, mktDef, lineSuggest, buildPick, evalTip, otFlag } = await import('./markets.js'));
 } catch (e) { bootError = e; }
@@ -43,24 +43,24 @@ function showStoredFlash() { try { const f = JSON.parse(sessionStorage.getItem('
 
 /* ---------- oldalváz ---------- */
 function layout() {
-  const nav = [['home', 'index.html', 'Kezdőlap'], ['tippek', 'tippek.html', 'Tippek'], ['join', 'kapcsolatvetel.html', 'Kapcsolatvétel'], ['contact', 'elerhetosegek.html', 'Elérhetőségek']];
+  const nav = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['join', '/kapcsolatvetel', 'Kapcsolatvétel'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
   $('#hdr').innerHTML = `
 <header class="top">
-  <a class="logo" href="index.html" aria-label="VikingGOLD"><span class="mark"><svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdc82"/><stop offset=".55" stop-color="#f5b83d"/><stop offset="1" stop-color="#d98e0b"/></linearGradient></defs><path d="M24 3 42 10v14c0 10-7.5 17.5-18 21C13.5 41.5 6 34 6 24V10z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M14 16l10 18 10-18" fill="none" stroke="url(#lg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="wm">Viking<b>GOLD</b></span></a>
+  <a class="logo" href="/" aria-label="VikingGOLD"><span class="mark"><svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdc82"/><stop offset=".55" stop-color="#f5b83d"/><stop offset="1" stop-color="#d98e0b"/></linearGradient></defs><path d="M24 3 42 10v14c0 10-7.5 17.5-18 21C13.5 41.5 6 34 6 24V10z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M14 16l10 18 10-18" fill="none" stroke="url(#lg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="wm">Viking<b>GOLD</b></span></a>
   <button class="burger" id="burger" aria-label="Menü" aria-expanded="false"><i></i><i></i><i></i></button>
   <nav class="nav" id="nav">${nav.map(([k, h, l]) => `<a href="${h}" class="${page === k ? 'on' : ''}">${l}</a>`).join('')}</nav>
   <div class="usr" id="usr"><button class="uic" id="uic" aria-haspopup="true" aria-expanded="false" aria-label="Fiók"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>${user ? '<i class="dot"></i>' : ''}</button>
     <div class="menu" id="umenu" hidden>${user
-      ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : 'Tag'}</small></div><a href="tippek.html">Tippek</a><a href="beallitasok.html">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
-      : '<a href="auth.html?mode=login">Belépés</a><a href="auth.html?mode=register">Regisztráció</a>'}</div></div>
+      ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : 'Tag'}</small></div><a href="/tippek">Tippek</a><a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
+      : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
-  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="index.html">Kezdőlap</a><a href="tippek.html">Tippek</a><a href="kapcsolatvetel.html">Kapcsolatvétel</a><a href="elerhetosegek.html">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
+  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/kapcsolatvetel">Kapcsolatvétel</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
   // menü viselkedés
   const uic = $('#uic'), um = $('#umenu'), bg = $('#burger'), nv = $('#nav');
   uic.onclick = e => { e.stopPropagation(); um.hidden = !um.hidden; uic.setAttribute('aria-expanded', String(!um.hidden)); };
   document.onclick = e => { if (!um.hidden && !um.contains(e.target)) um.hidden = true; };
   bg.onclick = () => { const o = nv.classList.toggle('open'); bg.setAttribute('aria-expanded', String(o)); };
-  const lo = $('#logout'); if (lo) lo.onclick = async e => { e.preventDefault(); await signOut(auth); flashNext('Sikeresen kijelentkeztél.'); location.href = 'index.html'; };
+  const lo = $('#logout'); if (lo) lo.onclick = async e => { e.preventDefault(); await signOut(auth); flashNext('Sikeresen kijelentkeztél.'); location.href = '/'; };
 }
 
 
@@ -97,7 +97,7 @@ function setupBanner() {
   $('#main').innerHTML = `<section class="wrap narrow"><div class="panel center" style="margin-top:50px"><h1>Beállítás szükséges</h1><p class="small" style="font-size:.95rem">Töltsd ki a <b>js/firebase-config.js</b> fájlt a Firebase projekt adataival. A lépések a README.txt-ben vannak.</p></div></section>`;
 }
 function lockView() {
-  return `<section class="wrap narrow"><div class="panel lock"><div class="big">🔒</div><h1>Csak tagoknak</h1><p class="small" style="font-size:.95rem">A tippeket a regisztrált és belépett felhasználók láthatják. A regisztráció ingyenes és két perc.</p><div class="row" style="justify-content:center;margin-top:18px"><a class="btn" href="auth.html?mode=login&next=tippek.html">Belépés</a><a class="btn ghost" href="auth.html?mode=register&next=tippek.html">Regisztráció</a></div></div></section>`;
+  return `<section class="wrap narrow"><div class="panel lock"><div class="big">🔒</div><h1>Csak tagoknak</h1><p class="small" style="font-size:.95rem">A tippeket a regisztrált és belépett felhasználók láthatják. A regisztráció ingyenes és két perc.</p><div class="row" style="justify-content:center;margin-top:18px"><a class="btn" href="/auth?mode=login&next=/tippek">Belépés</a><a class="btn ghost" href="/auth?mode=register&next=/tippek">Regisztráció</a></div></div></section>`;
 }
 
 function infoView(icon, title, text, extra = '') {
@@ -112,7 +112,7 @@ function gate() {
   return null;
 }
 function gateEvents() {
-  const o = $('#gOut'); if (o) o.onclick = async () => { await signOut(auth); location.href = 'index.html'; };
+  const o = $('#gOut'); if (o) o.onclick = async () => { await signOut(auth); location.href = '/'; };
   const c = $('#vChk'); if (c) c.onclick = async () => {
     c.disabled = true;
     try { await auth.currentUser.reload(); if (auth.currentUser.emailVerified) { await auth.currentUser.getIdToken(true); location.reload(); return; } toast('Az e-mail címed még nincs megerősítve. Kattints a levélben lévő linkre.', 'err'); }
@@ -131,7 +131,7 @@ function gateEvents() {
 function homePage() {
   const cta = $('#ctaReg'), bn = $('#bnRow');
   if (user && cta) cta.remove();
-  if (bn) bn.innerHTML = user ? '<a class="btn" href="tippek.html">Tippek</a>' : '<div class="row"><a class="btn" href="auth.html?mode=register">Regisztráció</a><a class="btn ghost" href="auth.html?mode=login">Belépés</a></div>';
+  if (bn) bn.innerHTML = user ? '<a class="btn" href="/tippek">Tippek</a>' : '<div class="row"><a class="btn" href="/auth?mode=register">Regisztráció</a><a class="btn ghost" href="/auth?mode=login">Belépés</a></div>';
   const renderPl = list => {
     if (!list) { $('#plist').innerHTML = '<span class="small">A lista nem tölthető be.</span>'; return; }
     list = list.filter(u => !u.disabled).sort((a, b) => (isAdminName(b.name) - isAdminName(a.name)) || (a.created || 0) - (b.created || 0) || String(a.name).localeCompare(String(b.name)));
@@ -141,19 +141,59 @@ function homePage() {
   };
   let lastUsers = null;
   onSnapshot(collection(db, 'admins'), sn => { ADMIN_SET = new Set([...RESERVED, ...sn.docs.map(d => String(d.data().name || '').toLowerCase())]); $('#stTipsters').textContent = Math.max(sn.size, 1); if (lastUsers) renderPl(lastUsers); }, () => { $('#stTipsters').textContent = ADMIN_NAMES.length; });
-  $('#sportTiles').innerHTML = SPORTS.map(([k, n, e]) => `<a class="sp reveal" href="tippek.html?s=${k}"><span class="e">${e}</span><b>${n}</b><small>Tippek →</small></a>`).join('');
+  $('#sportTiles').innerHTML = SPORTS.map(([k, n, e]) => `<a class="sp reveal" href="/tippek?s=${k}"><span class="e">${e}</span><b>${n}</b><small>Tippek →</small></a>`).join('');
   watchUsers(list => { lastUsers = list; renderPl(list); });
   if (user && profile && !profile.disabled && (user.emailVerified || isAdmin())) onSnapshot(query(collection(db, 'tips'), where('date', '==', ymd(new Date()))), s => { $('#stToday').textContent = s.size; }, () => { });
 }
 
+
+/* ---------- jelszó-visszaállítás: a levél 5 percig érvényes, és csak a legutolsó kért levél él ---------- */
+const RESET_MIN = 5;
+const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t.trim().toLowerCase())))].map(b => b.toString(16).padStart(2, '0')).join('');
+async function sendReset(email) {
+  const k = 'vg_rs_' + email.toLowerCase(), last = +localStorage.getItem(k) || 0;
+  if (Date.now() - last < 60000) throw { m: 'Az előző levelet most küldtük, várj 1 percet az újabb kéréssel.' };
+  const t = Date.now();
+  await setDoc(doc(db, 'resetReqs', await sha(email)), { t });                       // ez jelöli ki az egyetlen érvényes levelet
+  await sendPasswordResetEmail(auth, email, { url: location.origin + '/auth?rt=' + t, handleCodeInApp: false });
+  localStorage.setItem(k, String(t));
+}
+const resetErr = x => x.m || (String(x.code || '').includes('too-many') ? 'Túl sok kérés, várj egy kicsit.' : 'Nem sikerült: ' + (x.code || x.message));
+async function resetPage(code, rt) {
+  const box = h => $('#main').innerHTML = `<section class="wrap narrow authbox"><div class="panel center">${h}</div></section>`;
+  const dead = (why) => box(`<div class="big">⏱️</div><h1>A link nem érvényes</h1><p class="small">${why}</p><div class="row" style="justify-content:center"><a class="btn" href="/auth?mode=login">Új levél kérése</a></div>`);
+  try {
+    const email = await verifyPasswordResetCode(auth, code);
+    const rq = await getDoc(doc(db, 'resetReqs', await sha(email)));
+    const t = rq.exists() ? rq.data().t : 0;
+    if (!rt || +rt !== t) return dead('Ennél újabb jelszó-levelet is kértél, csak a legutolsó működik.');
+    if (Date.now() - t > RESET_MIN * 60000) return dead(`A link ${RESET_MIN} percig érvényes, ez már lejárt.`);
+    box(`<h1>Új jelszó</h1><p class="small">${esc(email)}</p><div id="aerr"></div><form id="rf" style="text-align:left"><label for="n1">Új jelszó</label><input id="n1" type="password" minlength="6" required autocomplete="new-password"><label for="n2">Új jelszó újra</label><input id="n2" type="password" minlength="6" required autocomplete="new-password"><div style="margin-top:20px"><button class="btn" style="width:100%" type="submit">Jelszó mentése</button></div></form>`);
+    $('#rf').onsubmit = async e => {
+      e.preventDefault(); const a = $('#n1').value;
+      if (a !== $('#n2').value) { $('#aerr').innerHTML = '<div class="flash err" style="margin:12px 0">A két jelszó nem egyezik.</div>'; return; }
+      if (Date.now() - t > RESET_MIN * 60000) return dead(`A link ${RESET_MIN} percig érvényes, ez már lejárt.`);
+      try { await confirmPasswordReset(auth, code, a); await setDoc(doc(db, 'resetReqs', await sha(email)), { t: 0 }); flashNext('Az új jelszavad beállítva, most már beléphetsz.'); location.href = '/auth?mode=login'; }
+      catch (x) { $('#aerr').innerHTML = `<div class="flash err" style="margin:12px 0">${esc(x.code === 'auth/weak-password' ? 'A jelszó túl gyenge.' : 'Nem sikerült: ' + (x.code || x.message))}</div>`; }
+    };
+  } catch (x) { dead('A link hibás, lejárt vagy már felhasználták.'); }
+}
+async function verifyPage(code) {
+  let ok = true; try { await applyActionCode(auth, code); } catch (x) { ok = false; }
+  flashNext(ok ? 'Az e-mail címed megerősítve.' : 'A megerősítő link hibás vagy lejárt.', ok ? 'ok' : 'err');
+  location.replace('/tippek');
+}
+
 function authPage() {
+  if (params.get('mode') === 'resetPassword' && params.get('oobCode')) { let rt = ''; try { rt = new URL(params.get('continueUrl') || '').searchParams.get('rt') || ''; } catch (e) { } return resetPage(params.get('oobCode'), rt); }
+  if (params.get('mode') === 'verifyEmail' && params.get('oobCode')) return verifyPage(params.get('oobCode'));
   const mode = params.get('mode') === 'register' ? 'register' : 'login';
-  const nextRaw = params.get('next') || 'tippek.html';
-  const next = ['tippek.html', 'index.html', 'elerhetosegek.html', 'beallitasok.html'].includes(nextRaw) ? nextRaw : 'tippek.html';
+  const nextRaw = params.get('next') || '/tippek';
+  const next = ['/tippek', '/', '/elerhetosegek', '/beallitasok'].includes(nextRaw) ? nextRaw : '/tippek';
   if (user) { location.replace(next); return; }
   const reg = mode === 'register';
   $('#main').innerHTML = `<section class="wrap narrow authbox"><div class="panel">
-  <div class="tabs"><a class="${!reg ? 'on' : ''}" href="auth.html?mode=login&next=${next}">Belépés</a><a class="${reg ? 'on' : ''}" href="auth.html?mode=register&next=${next}">Regisztráció</a></div>
+  <div class="tabs"><a class="${!reg ? 'on' : ''}" href="/auth?mode=login&next=${next}">Belépés</a><a class="${reg ? 'on' : ''}" href="/auth?mode=register&next=${next}">Regisztráció</a></div>
   <h1>${reg ? 'Csatlakozz' : 'Üdv újra!'}</h1>
   <p class="small">${reg ? 'Ingyenes regisztráció valódi e-mail címmel. Küldünk egy megerősítő levelet, utána látod a tippeket.' : 'Lépj be az e-mail címeddel. A belépés addig él, amíg be nem zárod a böngészőt.'}</p>
   <div id="aerr"></div>
@@ -170,8 +210,8 @@ function authPage() {
     e.preventDefault(); err('');
     const mail = $('#email').value.trim();
     if (!MAIL_RE.test(mail)) { err('Írd be fent az e-mail címedet, majd kattints újra az „Elfelejtett jelszó?” linkre.'); return; }
-    try { await sendPasswordResetEmail(auth, mail); toast('Ha ez az e-mail cím regisztrálva van, elküldtük a jelszó-visszaállító levelet. Nézd meg a spam mappát is.'); }
-    catch (x) { err(String(x.code || '').includes('too-many') ? 'Túl sok kérés, várj egy kicsit.' : 'Nem sikerült elküldeni: ' + (x.code || x.message)); }
+    try { await sendReset(mail); toast('Ha ez az e-mail cím regisztrálva van, elküldtük a levelet. 5 percig érvényes, nézd meg a spam mappát is.'); }
+    catch (x) { err(resetErr(x)); }
   };
   $('#af').onsubmit = async e => {
     e.preventDefault(); err('');
@@ -204,7 +244,7 @@ function authPage() {
       location.href = next;
     } catch (x) {
       const c = x.code || '';
-      err(x.m || (c.includes('email-already') ? 'Ezzel az e-mail címmel már van regisztráció.' : c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found') ? 'Hibás e-mail cím vagy jelszó.' : c.includes('invalid-email') ? 'Az e-mail cím formátuma hibás.' : c.includes('weak-password') ? 'A jelszó túl gyenge.' : c.includes('too-many') ? 'Túl sok próbálkozás, várj egy kicsit.' : c.includes('operation-not-allowed') ? 'A Firebase-ben nincs bekapcsolva az Email/Password belépés.' : 'Hiba: ' + (x.message || c)));
+      err(x.m || (c.includes('email-already') ? 'Ezzel az e-mail címmel már van regisztráció.' : c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found') ? 'Hibás e-mail cím vagy jelszó. Ellenőrizd, és próbáld újra.' : c.includes('invalid-email') ? 'Az e-mail cím formátuma hibás.' : c.includes('weak-password') ? 'A jelszó túl gyenge.' : c.includes('too-many') ? 'Túl sok próbálkozás, várj egy kicsit.' : c.includes('operation-not-allowed') ? 'A Firebase-ben nincs bekapcsolva az Email/Password belépés.' : 'Hiba: ' + (x.message || c)));
       btn.disabled = false; authBusy = false;
     }
   };
@@ -222,7 +262,7 @@ function tippekPage() {
     d: /^\d{4}-\d{2}-\d{2}$/.test(params.get('d') || '') ? params.get('d') : today
   };
   let all = [], loaded = false, form = null, pending = false;
-  const sync = () => history.replaceState(null, '', `tippek.html?s=${st.s}&v=${st.v}${st.v === 'date' ? '&d=' + st.d : ''}`);
+  const sync = () => history.replaceState(null, '', `/tippek?s=${st.s}&v=${st.v}${st.v === 'date' ? '&d=' + st.d : ''}`);
   const curDate = () => st.v === 'tomorrow' ? tomorrow : st.v === 'date' ? st.d : today;
 
   root.innerHTML = `<section class="wrap" style="padding-top:26px">
@@ -401,9 +441,9 @@ function tippekPage() {
 function contactPage() {
   const box = $('#cform');
   if (!user) {
-    box.innerHTML = `<p class="small" style="font-size:.95rem">Üzenetet csak regisztrált, belépett tag küldhet. A neved automatikusan a regisztrált felhasználóneved lesz.</p><div class="row"><a class="btn" href="auth.html?mode=login&next=elerhetosegek.html">Belépés</a><a class="btn ghost" href="auth.html?mode=register&next=elerhetosegek.html">Regisztráció</a></div>`;
+    box.innerHTML = `<p class="small" style="font-size:.95rem">Üzenetet csak regisztrált, belépett tag küldhet. A neved automatikusan a regisztrált felhasználóneved lesz.</p><div class="row"><a class="btn" href="/auth?mode=login&next=/elerhetosegek">Belépés</a><a class="btn ghost" href="/auth?mode=register&next=/elerhetosegek">Regisztráció</a></div>`;
   } else if (gate()) {
-    box.innerHTML = '<p class="small" style="font-size:.95rem">Üzenetet csak megerősített e-mail címmel rendelkező, engedélyezett tag küldhet. Nyisd meg a <a href="tippek.html">Tippek</a> oldalt a megerősítéshez.</p>';
+    box.innerHTML = '<p class="small" style="font-size:.95rem">Üzenetet csak megerősített e-mail címmel rendelkező, engedélyezett tag küldhet. Nyisd meg a <a href="/tippek">Tippek</a> oldalt a megerősítéshez.</p>';
   } else {
     const name = (profile && profile.name) || user.displayName || user.email.split('@')[0];
     box.innerHTML = `<form id="cf"><div style="position:absolute;left:-9999px" aria-hidden="true"><input id="c_hp" tabindex="-1" autocomplete="off"></div>
@@ -472,7 +512,7 @@ function settingsPage() {
   ${admin ? `<div class="card"><h2>Tagok kezelése <span class="small" id="mCount"></span></h2>
     <input id="mSearch" placeholder="Keresés név vagy e-mail alapján…" style="margin-bottom:12px" autocomplete="off">
     <div class="tbl"><table><thead><tr><th>Név</th><th>E-mail</th><th>Regisztrált</th><th>Állapot</th><th>Műveletek</th></tr></thead><tbody id="mBody"><tr><td colspan="5">Betöltés…</td></tr></tbody></table></div>
-    <p class="hint" style="margin:12px 0 0">Jelszót másnak nem lehet közvetlenül beállítani: a „Jelszó-mail” gomb jelszó-visszaállító levelet küld a tagnak, abban ő maga választ újat. A „Törlés” eltávolítja a profilját és letiltja a hozzáférését (a neve felszabadul). A bejelentkezési adata a Firebase Console → Authentication → Users listán egy kattintással véglegesen is törölhető.</p></div>` : ''}
+    <p class="hint" style="margin:12px 0 0">A „Név” gomb átírja a tag felhasználónevét. Más jelszavát biztonsági okból nem lehet közvetlenül beállítani: a „Jelszó-mail” gomb levelet küld a tagnak, amiben ő választ újat (a link 5 percig érvényes, és csak a legutóbb kért levél működik). A „Törlés” eltávolítja a profilját és letiltja a hozzáférését (a neve felszabadul). A bejelentkezési adata a Firebase Console → Authentication → Users listán egy kattintással véglegesen is törölhető.</p></div>` : ''}
   </section>`;
   showStoredFlash();
 
@@ -481,6 +521,7 @@ function settingsPage() {
     const nn = $('#nn').value.trim(), lcNew = nn.toLowerCase(), lcOld = profile.name.toLowerCase(), btn = e.submitter || e.target.querySelector('[type=submit]');
     if (!NAME_RE.test(nn)) { toast('A felhasználónév 3–20 karakter lehet (angol betű, szám, _ . -).', 'err'); return; }
     if (nn === profile.name) { toast('Ez már a jelenlegi neved.', 'err'); return; }
+    if (lcNew !== lcOld && isReserved(lcNew) && !isAdmin()) { toast('Ez a név védett.', 'err'); return; }
     btn.disabled = true;
     try {
       if (lcNew !== lcOld) {
@@ -509,7 +550,7 @@ function settingsPage() {
     } catch (x) { const c = String(x.code || ''); toast(c.includes('invalid-credential') || c.includes('wrong-password') ? 'A jelenlegi jelszó hibás.' : c.includes('too-many') ? 'Túl sok próbálkozás, várj egy kicsit.' : 'Nem sikerült: ' + (x.code || x.message), 'err'); }
     btn.disabled = false;
   };
-  $('#selfReset').onclick = async () => { try { await sendPasswordResetEmail(auth, user.email); toast('Elküldtük a jelszó-visszaállító levelet a(z) ' + user.email + ' címre.'); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } };
+  $('#selfReset').onclick = async () => { try { await sendReset(user.email); toast('Elküldtük a levelet: ' + user.email + ' (5 percig érvényes).'); } catch (x) { toast(resetErr(x), 'err'); } };
 
   if (!admin) return;
   let users = [], mails = {}, filter = '';
@@ -521,13 +562,26 @@ function settingsPage() {
       const adm = isAdminName(u.name), me = u.id === user.uid;
       const stt = adm ? '<span class="pill v">Admin</span>' : u.disabled ? '<span class="pill r">Letiltva</span>' : '<span class="pill g">Aktív</span>';
       return `<tr><td><b>${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td>
-      <td class="acts"><button class="btn sm ghost" data-rs="${u.id}">Jelszó-mail</button>${adm ? '' : `<button class="btn sm ghost" data-dis="${u.id}">${u.disabled ? 'Feloldás' : 'Letiltás'}</button><button class="btn sm danger" data-rm="${u.id}">Törlés</button>`}</td></tr>`;
+      <td class="acts"><button class="btn sm ghost" data-rs="${u.id}">Jelszó-mail</button>${adm ? '' : `<button class="btn sm ghost" data-nm="${u.id}">Név</button><button class="btn sm ghost" data-dis="${u.id}">${u.disabled ? 'Feloldás' : 'Letiltás'}</button><button class="btn sm danger" data-rm="${u.id}">Törlés</button>`}</td></tr>`;
     }).join('') : '<tr><td colspan="5">Nincs találat.</td></tr>';
     const U = id => users.find(x => x.id === id);
     $('#mBody').querySelectorAll('[data-rs]').forEach(b => b.onclick = async () => {
       const em = mails[b.dataset.rs]; if (!em) { toast('Ennek a tagnak nincs ismert e-mail címe.', 'err'); return; }
       if (!confirm('Jelszó-visszaállító levelet küldesz ide: ' + em + ' ?')) return;
-      try { await sendPasswordResetEmail(auth, em); toast('A jelszó-visszaállító levél elment: ' + em); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
+      try { await sendReset(em); toast('A jelszó-levél elment: ' + em + ' (5 percig érvényes).'); } catch (x) { toast(resetErr(x), 'err'); }
+    });
+    $('#mBody').querySelectorAll('[data-nm]').forEach(b => b.onclick = async () => {
+      const u = U(b.dataset.nm), nn = (prompt('Új felhasználónév ennek a tagnak: ' + u.name, u.name) || '').trim();
+      if (!nn || nn === u.name) return;
+      if (!NAME_RE.test(nn)) { toast('A felhasználónév 3–20 karakter lehet (angol betű, szám, _ . -).', 'err'); return; }
+      const lcN = nn.toLowerCase(), lcO = String(u.name || '').toLowerCase();
+      try {
+        if (lcN !== lcO) { const ex = await getDoc(doc(db, 'usernames', lcN)); if (ex.exists() && ex.data().uid !== u.id) { toast('Ez a név már foglalt.', 'err'); return; } if (isReserved(lcN)) { toast('Ez a név védett.', 'err'); return; } }
+        const bt = writeBatch(db);
+        if (lcN !== lcO) { bt.set(doc(db, 'usernames', lcN), { uid: u.id }); bt.delete(doc(db, 'usernames', lcO)); }
+        bt.update(doc(db, 'users', u.id), { name: nn });
+        await bt.commit(); toast('Név módosítva: ' + nn);
+      } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
     });
     $('#mBody').querySelectorAll('[data-dis]').forEach(b => b.onclick = async () => { const u = U(b.dataset.dis); try { await updateDoc(doc(db, 'users', u.id), { disabled: !u.disabled }); toast(u.disabled ? 'A tag hozzáférése visszaállítva.' : 'A tag le van tiltva.'); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } });
     $('#mBody').querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => {
