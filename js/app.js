@@ -239,10 +239,19 @@ function authPage() {
           await b.commit();
         } catch (x) { await c.user.delete().catch(() => { }); throw { m: 'A regisztráció nem sikerült (a név közben foglalt lett?): ' + (x.code || x.message) }; }
         await updateProfile(c.user, { displayName: name }).catch(() => { });
-        sendEmailVerification(c.user).catch(() => { });
-        flashNext('Sikeres regisztráció! Küldtünk egy megerősítő levelet, kattints a benne lévő linkre.');
+        await sendEmailVerification(c.user).catch(() => { });
+        await signOut(auth).catch(() => { });   // regisztráció után nem léptetjük be: előbb meg kell erősíteni az e-mailt
+        flashNext('Sikeres regisztráció! Küldtünk egy megerősítő levelet, kattints a benne lévő linkre (nézd meg a spam mappát is), utána tudsz belépni.');
+        location.href = '/auth?mode=login&next=' + next;
+        return;
       } else {
-        await signInWithEmailAndPassword(auth, email, pass);
+        const c = await signInWithEmailAndPassword(auth, email, pass);
+        let adm = false; try { adm = (await getDoc(doc(db, 'admins', c.user.uid))).exists(); } catch (e) { }
+        if (!c.user.emailVerified && !adm) {
+          await sendEmailVerification(c.user).catch(() => { });
+          await signOut(auth).catch(() => { });
+          throw { m: 'Az e-mail címed még nincs megerősítve. Újra elküldtük a megerősítő levelet: kattints a benne lévő linkre (nézd meg a spam mappát is), utána tudsz belépni.' };
+        }
         flashNext('Üdv újra!');
       }
       location.href = next;
