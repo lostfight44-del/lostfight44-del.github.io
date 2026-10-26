@@ -400,3 +400,9 @@ input:hover,select:hover,textarea:hover{border-color:rgba(246,196,83,.35)}
 ::-webkit-scrollbar{width:11px}::-webkit-scrollbar-thumb{background:#1c2638;border-radius:8px;border:3px solid var(--bg)}::-webkit-scrollbar-thumb:hover{background:#2a3850}
 :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 @media(max-width:760px){.hero{padding:60px 16px 40px}.panel,.card{padding:22px}.tlog{padding:4px 14px 10px}.tl{padding:12px 14px}.banner{padding:24px 22px}.nav a{border-radius:12px}}
+
+/* Admin szint: mindenhol piros */
+.who small{color:#ff5468!important}
+.chip.adm{background:rgba(255,84,104,.12)!important;border-color:rgba(255,84,104,.5)!important;color:#ffb3bd!important}
+.chip.adm i{color:#ff5468!important}
+.pill.v{background:rgba(255,84,104,.12)!important;border-color:rgba(255,84,104,.5)!important;color:#ff8d9b!important}
