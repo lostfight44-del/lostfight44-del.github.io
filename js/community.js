@@ -117,6 +117,7 @@ export function updatesPage(c) {
       items.forEach(x => { if ((x.created || 0) > maxCreated) maxCreated = x.created; });
       list();
       if (maxCreated) localStorage.setItem('vg_upd_seen', Math.max(maxCreated, +localStorage.getItem('vg_upd_seen') || 0));
+      window.dispatchEvent(new Event('vg-read'));
     }, e => { $('#uList').innerHTML = `<div class="upd-empty">A bejegyzések nem tölthetők be: ${esc(e.code || e.message)}</div>`; });
   }
   $('#uMore').onclick = () => { lim += 15; sub(); };
@@ -150,7 +151,9 @@ export function chatPage(c) {
 
   const isAdm = (uid, name) => adminUids.has(uid) || (name && c.adminName(name));
   const col = n => { let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h},58%,52%)`; };
-  const av = (n, adm) => `<div class="av" style="background:${adm ? 'linear-gradient(135deg,#ffe29a,#d99a1c)' : col(n)};${adm ? 'color:#1a1204' : ''}">${esc(String(n).replace(/^[_.\-]+/, '').charAt(0).toUpperCase() || '?')}</div>`;
+  const uMap = {};
+  const picOf = uid => { const a = uid === me.uid ? (uMap[uid] && uMap[uid].avatar) || profile.avatar : uMap[uid] && uMap[uid].avatar; return typeof a === 'string' && a.startsWith('data:image/') ? a : ''; };
+  const av = (n, adm, uid) => { const p = picOf(uid); return p ? `<div class="av pic"><img src="${p}" alt="" loading="lazy"></div>` : `<div class="av" style="background:${adm ? 'linear-gradient(135deg,#ffe29a,#d99a1c)' : col(n)};${adm ? 'color:#1a1204' : ''}">${esc(String(n).replace(/^[_.\-]+/, '').charAt(0).toUpperCase() || '?')}</div>`; };
   const roomOf = k => ROOMS.find(r => r[0] === k);
   const dayLabel = d => { const t = ymd(new Date()), y = ymd(new Date(Date.now() - 864e5)); return d === t ? 'Ma' : d === y ? 'Tegnap' : huDate(d); };
   const fmt = t => String(t).split(URL_RE).map((p, i) => i % 2
@@ -168,7 +171,7 @@ export function chatPage(c) {
     <aside class="dc-side">
       <div class="dc-h">VikingGOLD közösség</div>
       <div class="dc-ch" id="chList"></div>
-      <div class="dc-me">${av(me.name, admin)}<div><b>${esc(me.name)}</b><small>${admin ? 'Admin' : 'Tag'}</small></div></div>
+      <div class="dc-me">${av(me.name, admin, me.uid)}<div><b>${esc(me.name)}</b><small>${admin ? 'Admin' : 'Tag'}</small></div></div>
     </aside>
     <div class="dc-main">
       <div class="dc-top"><b id="chName"></b><span class="dc-desc" id="chDesc"></span><button class="dc-ic" id="mbBtn" aria-label="Tagok" title="Tagok">👥 <span id="onCnt"></span></button></div>
@@ -194,7 +197,7 @@ export function chatPage(c) {
   }
   function switchRoom(r) {
     if (r === room) return;
-    room = r; lim = 60; replyTo = null; editing = null; stick = true; lastTopId = null;
+    room = r; window.vgChatRoom = r; lim = 60; replyTo = null; editing = null; stick = true; lastTopId = null;
     localStorage.setItem('vg_room', r); history.replaceState(null, '', '#' + r);
     chList(); composer(); replyBar(); sub();
   }
@@ -224,7 +227,7 @@ export function chatPage(c) {
       ? `<div class="dc-edit"><textarea id="edTa" maxlength="1000">${esc(editDraft)}</textarea><div class="row"><button class="btn sm" data-a="edsave">Mentés</button><button class="btn sm ghost" data-a="edcancel">Mégse</button><small>Enter: mentés · Esc: mégse</small></div></div>`
       : `<div class="dc-tx">${fmt(m.text)}${m.edited ? ' <small class="ed">(szerkesztve)</small>' : ''}</div>`;
     return `<div class="dc-m ${group ? 'grp' : ''} ${mine ? 'mine' : ''} ${ment ? 'ment' : ''} ${m.pin ? 'pinned' : ''}" data-id="${m.id}" data-uid="${esc(m.uid)}" data-name="${esc(m.name)}">
-      ${group ? `<span class="dc-gt">${hhmm(m.t)}</span>` : av(m.name, adm)}
+      ${group ? `<span class="dc-gt">${hhmm(m.t)}</span>` : av(m.name, adm, m.uid)}
       <div class="dc-b">
         ${group ? '' : `<div class="dc-hd"><b class="nm ${adm ? 'adm' : ''}">${esc(m.name)}</b>${adm ? '<i class="bdg">ADMIN</i>' : ''}<time>${hhmm(m.t)}</time>${m.pin ? '<span class="pn">📌</span>' : ''}</div>`}
         ${m.rp ? `<div class="dc-rq" data-a="goto" data-id="${esc(m.rp.id)}">↪ <b>${esc(m.rp.name)}</b> ${esc(m.rp.text)}</div>` : ''}
@@ -254,7 +257,7 @@ export function chatPage(c) {
     lastTopId = top; stick = false;
     const mb = $('#moreBtn'); if (mb) mb.onclick = () => { lim += 60; sub(); };
     const ed = $('#edTa'); if (ed) { ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); ed.oninput = () => { editDraft = ed.value; }; ed.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') { editing = null; render(); } }; }
-    pinBar();
+    pinBar(); markRead();
   }
 
   function pinBar() {
@@ -290,6 +293,14 @@ export function chatPage(c) {
   });
   $('#newBtn').onclick = () => { const b = $('#msgs'); b.scrollTop = b.scrollHeight; $('#newBtn').hidden = true; };
   $('#msgs').addEventListener('scroll', () => { const b = $('#msgs'); if (b.scrollHeight - b.scrollTop - b.clientHeight < 60) $('#newBtn').hidden = true; }, { passive: true });
+
+  /* ---- olvasottnak jelölés (a menü számlálójához) ---- */
+  function markRead() {
+    if (document.visibilityState !== 'visible' || !msgs.length) return;
+    const t = Math.max(...msgs.map(m => m.t));
+    if (t > (+localStorage.getItem('vg_read_' + room) || 0)) { localStorage.setItem('vg_read_' + room, String(t)); window.dispatchEvent(new Event('vg-read')); }
+  }
+  document.addEventListener('visibilitychange', markRead); window.addEventListener('focus', markRead);
 
   /* ---- írás ---- */
   function replyBar() {
@@ -347,7 +358,7 @@ export function chatPage(c) {
     list.forEach(u => (isAdm(u.id, u.name) ? A : online(u) ? O : F).push(u));
     const s = (a, b) => String(a.name).localeCompare(String(b.name));
     const item = u => { const adm = isAdm(u.id, u.name), on = online(u), mu = mutes[u.id] && mutes[u.id] > now;
-      return `<div class="mb ${on || adm && on ? '' : 'off'}"><div class="avw">${av(u.name || '?', adm)}<i class="st ${on ? 'on' : ''}"></i></div><span class="${adm ? 'adm' : ''}">${esc(u.name || '?')}</span>${mu ? '<em title="Némítva">🔇</em>' : ''}${admin && mu ? `<button class="mbx" data-um="${u.id}" title="Némítás feloldása">feloldás</button>` : ''}${admin && !mu && u.id !== me.uid && !adm ? `<button class="mbx" data-mt="${u.id}" data-n="${esc(u.name || '?')}" title="Némítás">🔇</button>` : ''}</div>`; };
+      return `<div class="mb ${on || adm && on ? '' : 'off'}"><div class="avw">${av(u.name || '?', adm, u.id)}<i class="st ${on ? 'on' : ''}"></i></div><span class="${adm ? 'adm' : ''}">${esc(u.name || '?')}</span>${mu ? '<em title="Némítva">🔇</em>' : ''}${admin && mu ? `<button class="mbx" data-um="${u.id}" title="Némítás feloldása">feloldás</button>` : ''}${admin && !mu && u.id !== me.uid && !adm ? `<button class="mbx" data-mt="${u.id}" data-n="${esc(u.name || '?')}" title="Némítás">🔇</button>` : ''}</div>`; };
     const grp = (t, a) => a.length ? `<div class="mg">${t} — ${a.length}</div>${a.sort(s).map(item).join('')}` : '';
     const adminsOn = A.filter(online), adminsOff = A.filter(u => !online(u));
     $('#mem').innerHTML = grp('Adminok', [...adminsOn.sort(s), ...adminsOff.sort(s)]) + grp('Online', O) + grp('Offline', F.slice(0, 200));
@@ -360,7 +371,7 @@ export function chatPage(c) {
 
   /* ---- élő adatok ---- */
   onSnapshot(collection(db, 'admins'), sn => { adminUids = new Set([...sn.docs.map(d => d.id), ...(admin ? [me.uid] : [])]); render(); members(); }, () => { });
-  onSnapshot(collection(db, 'users'), sn => { users = sn.docs.map(d => ({ id: d.id, ...d.data() })); members(); }, () => { });
+  onSnapshot(collection(db, 'users'), sn => { users = sn.docs.map(d => ({ id: d.id, ...d.data() })); users.forEach(u => { uMap[u.id] = u; }); members(); render(); const mb = document.querySelector('.dc-me .av'); if (mb) mb.outerHTML = av(me.name, admin, me.uid); }, () => { });
   onSnapshot(collection(db, 'presence'), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); members(); }, () => { });
   if (admin) onSnapshot(collection(db, 'chatMutes'), sn => { mutes = {}; sn.docs.forEach(d => { mutes[d.id] = d.data().until || 0; }); members(); }, () => { });
   else onSnapshot(doc(db, 'chatMutes', me.uid), s => { myMute = s.exists() ? (s.data().until || 0) : 0; composer(); }, () => { });
@@ -369,5 +380,6 @@ export function chatPage(c) {
   setInterval(members, 60000);
   setInterval(() => { if (myMute && myMute < Date.now() + 1000) composer(); }, 15000);
 
+  window.vgChatRoom = room;
   chList(); composer(); replyBar(); sub();
 }
