@@ -267,7 +267,7 @@ function homePage() {
   };
   let lastUsers = null;
   onSnapshot(collection(db, 'admins'), sn => { ADMIN_SET = new Set([...RESERVED, ...sn.docs.map(d => String(d.data().name || '').toLowerCase())]); $('#stTipsters').textContent = Math.max(sn.size, 1); if (lastUsers) renderPl(lastUsers); }, () => { $('#stTipsters').textContent = ADMIN_NAMES.length; });
-  $('#sportTiles').innerHTML = SPORTS.map(([k, n, e]) => `<a class="sp reveal" href="/tippek?s=${k}"><span class="e">${e}</span><b>${n}</b><small>Tippek →</small></a>`).join('');
+  $('#sportTiles').innerHTML = SPORTS.map(([k, n, e]) => `<a class="sp reveal" href="/tippek?s=${k}"><span class="e">${e}</span><b>${n}</b><small>Megnyitás</small></a>`).join('');
   watchUsers(list => { lastUsers = list; renderPl(list); });
   const member = user && profile && !profile.disabled && (user.emailVerified || isAdmin());
   if (member) {
@@ -465,7 +465,8 @@ function tippekPage() {
   };
   function tabs() {
     $('#sTabs').innerHTML = SPORTS.map(([k, n, e]) => `<a href="#" data-s="${k}" class="${st.s === k ? 'on' : ''}">${e} ${n} <small>${scH(cnt(all.filter(t => sportOf(t) === k && (st.v === 'all' || t.date === curDate()))))}</small></a>`).join('');
-    $('#vTabs').innerHTML = [['today', 'Mai'], ['tomorrow', 'Holnapi'], ['date', 'Dátum szerint'], ['all', 'Összes']].map(([k, n]) => `<a href="#" data-v="${k}" class="${st.v === k ? 'on' : ''}">${n}</a>`).join('');
+    const sd = s => { const d = new Date(s + 'T12:00:00'); return MONTHS[d.getMonth() + 1].slice(0, 3) + '. ' + d.getDate() + '.'; };
+    $('#vTabs').innerHTML = [['today', 'Mai', sd(today)], ['tomorrow', 'Holnapi', sd(tomorrow)], ['date', 'Dátum szerint', ''], ['all', 'Összes', '']].map(([k, n, x]) => `<a href="#" data-v="${k}" class="${st.v === k ? 'on' : ''}"><span>${n}</span>${x ? `<em>${x}</em>` : ''}</a>`).join('');
     $('#dRow').hidden = st.v !== 'date'; $('#dpick').value = st.d;
     $('#sTabs').querySelectorAll('[data-s]').forEach(a => a.onclick = e => { e.preventDefault(); st.s = a.dataset.s; sync(); tabs(); list(); });
     $('#vTabs').querySelectorAll('[data-v]').forEach(a => a.onclick = e => { e.preventDefault(); st.v = a.dataset.v; sync(); tabs(); list(); });
@@ -897,6 +898,39 @@ async function loadNotify() {
   try { const m = await import('./notify.js'); m.init({ app, db, auth, user, profile, esc, $, page }); } catch (e) { }
 }
 
+
+/* ---------- mozgó információs sáv (alul, a chat kivételével) ---------- */
+let tickSports = {};
+function tickItems() {
+  const bits = ['Jó arányok', 'Profi adminok', 'Minden eredmény visszanézhető'];
+  const live = SPORTS.filter(x => tickSports[x[0]]).map(([k, n, e]) => ({ e, t: `${n} tipp elérhető`, n: tickSports[k] }));
+  const out = [];
+  live.forEach(l => { out.push(`<span class="ti hot"><b>${l.e}</b>${l.t}<em>${l.n} db</em></span>`); out.push('<span class="ti">Jó arány</span>'); out.push('<span class="ti">Profi adminok</span>'); });
+  if (!live.length) { SPORTS.forEach(([k, n, e]) => out.push(`<span class="ti"><b>${e}</b>${n} tippek</span>`)); }
+  bits.forEach(b => out.push(`<span class="ti">${b}</span>`));
+  out.push('<span class="ti">Ingyenes regisztráció</span>');
+  return out;
+}
+function drawTicker() {
+  const t = document.getElementById('tkTrack'); if (!t) return;
+  const sep = '<i class="tsep" aria-hidden="true"></i>';
+  const half = Array.from({ length: 3 }, () => tickItems().join(sep) + sep).join('');
+  t.innerHTML = `<div class="tk-half">${half}</div><div class="tk-half" aria-hidden="true">${half}</div>`;
+}
+function startTicker() {
+  if (page === 'chat' || document.getElementById('tick')) return;
+  document.body.classList.add('has-tick');
+  document.body.insertAdjacentHTML('beforeend', '<div class="tick" id="tick" role="marquee" aria-label="Információk"><div class="tk-lab"><span></span>VikingGOLD</div><div class="tk-view"><div class="tk-track" id="tkTrack"></div></div></div>');
+  drawTicker();
+  if (configured && user && profile && !profile.disabled && (user.emailVerified || isAdmin())) {
+    try {
+      onSnapshot(query(collection(db, 'tips'), where('date', '==', ymd(new Date()))), s => {
+        tickSports = {}; s.docs.forEach(d => { const k = sportOf(d.data()); tickSports[k] = (tickSports[k] || 0) + 1; }); drawTicker();
+      }, () => { });
+    } catch (e) { }
+  }
+}
+
 /* ---------- indítás ---------- */
 async function start(u) {
   user = u; profile = null; adminFlag = false;
@@ -906,7 +940,7 @@ async function start(u) {
       profile = p.exists() ? p.data() : null; adminFlag = a.exists();
     } catch (e) { }
   }
-  layout();
+  layout(); startTicker();
   if (page === 'auth') authPage();
   else if (page === 'tippek') tippekPage();
   else if (page === 'contact') { contactPage(); joinPage(); }
@@ -924,7 +958,7 @@ async function start(u) {
 if (bootError) {
   layout();
   $('#main').innerHTML = `<section class="wrap narrow"><div class="panel center" style="margin-top:50px"><h1>Betöltési hiba</h1><p class="small" style="font-size:.95rem">Az oldal egy szükséges fájlt nem tudott betölteni. Valószínűleg a <b>js/firebase-config.js</b> hiányzik, vagy hibás a tartalma (az első sorának ez kell lennie: <code>export const firebaseConfig = {</code>).</p><p class="small" style="word-break:break-word;color:var(--bad)">${esc(String(bootError && bootError.message || bootError))}</p></div></section>`;
-} else if (!configured) { layout(); setupBanner(); }
+} else if (!configured) { layout(); setupBanner(); startTicker(); }
 else {
   app = initializeApp(firebaseConfig); auth = getAuth(app); auth.languageCode = 'hu'; db = getFirestore(app);
   setPersistence(auth, browserSessionPersistence).catch(() => { }).finally(() => {
