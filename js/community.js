@@ -352,7 +352,7 @@ export function chatPage(c) {
 
   /* ---- tagok ---- */
   function members() {
-    const now = Date.now(), list = users.filter(u => !u.disabled);
+    const now = Date.now(), list = users.filter(u => !u.disabled && (u.verified === true || u.id === me.uid));
     const online = u => u.id === me.uid || (pres[u.id] && now - pres[u.id] < 150000);
     const A = [], O = [], F = [];
     list.forEach(u => (isAdm(u.id, u.name) ? A : online(u) ? O : F).push(u));
