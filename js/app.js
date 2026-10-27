@@ -234,7 +234,7 @@ function homePage() {
   if (bn) bn.innerHTML = user ? '<a class="btn" href="/tippek">Tippek</a>' : '<div class="row"><a class="btn" href="/auth?mode=register">Regisztráció</a><a class="btn ghost" href="/auth?mode=login">Belépés</a></div>';
   const renderPl = list => {
     if (!list) { $('#plist').innerHTML = '<span class="small">A lista nem tölthető be.</span>'; return; }
-    list = list.filter(u => !u.disabled).sort((a, b) => (isAdminName(b.name) - isAdminName(a.name)) || (a.created || 0) - (b.created || 0) || String(a.name).localeCompare(String(b.name)));
+    list = list.filter(u => !u.disabled && u.verified === true).sort((a, b) => (isAdminName(b.name) - isAdminName(a.name)) || (a.created || 0) - (b.created || 0) || String(a.name).localeCompare(String(b.name)));
     $('#stPlayers').textContent = list.length;
     $('#plCount').textContent = '(' + list.length + ')';
     $('#plist').innerHTML = list.length ? list.map(u => `<span class="chip ${isAdminName(u.name) ? 'adm' : ''}">${picOf(u) ? `<img src="${picOf(u)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;margin:-2px 2px -2px -6px">` : ''}${esc(u.name || '?')}${isAdminName(u.name) ? ' <i>Admin · Tippadó</i>' : ''}</span>`).join('') : '<span class="small">Még nincs regisztrált játékos.</span>';
@@ -352,6 +352,7 @@ function authPage() {
           await signOut(auth).catch(() => { });
           throw { m: 'Az e-mail címed még nincs megerősítve. Újra elküldtük a megerősítő levelet: kattints a benne lévő linkre (nézd meg a spam mappát is), utána tudsz belépni.' };
         }
+        try { await updateDoc(doc(db, 'users', c.user.uid), { verified: true }); } catch (e) { }   // megerősített e-mail: innentől megjelenik a tagok között
         flashNext('Üdv újra!');
       }
       location.href = next;
@@ -772,7 +773,7 @@ function settingsPage() {
     $('#mCount').textContent = '(' + users.length + ' · online: ' + users.filter(u => u.id === user.uid || (pres[u.id] && Date.now() - pres[u.id] < ON_MS)).length + ')';
     $('#mBody').innerHTML = l.length ? l.map(u => {
       const adm = isAdminName(u.name), me = u.id === user.uid;
-      const stt = adm ? '<span class="pill v">Admin</span>' : u.disabled ? '<span class="pill r">Letiltva</span>' : '<span class="pill g">Aktív</span>';
+      const stt = adm ? '<span class="pill v">Admin</span>' : u.disabled ? '<span class="pill r">Letiltva</span>' : u.verified !== true ? '<span class="pill y">Nincs megerősítve</span>' : '<span class="pill g">Aktív</span>';
       return `<tr><td><b>${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td><td>${actOf(u)}</td>
       <td class="acts"><button class="btn sm ghost" data-rs="${u.id}">Jelszó-mail</button>${adm ? '' : `<button class="btn sm ghost" data-nm="${u.id}">Név</button><button class="btn sm ghost" data-dis="${u.id}">${u.disabled ? 'Feloldás' : 'Letiltás'}</button><button class="btn sm danger" data-rm="${u.id}">Törlés</button>`}</td></tr>`;
     }).join('') : '<tr><td colspan="6">Nincs találat.</td></tr>';
@@ -833,6 +834,7 @@ async function start(u) {
     try {
       const [p, a] = await Promise.all([getDoc(doc(db, 'users', u.uid)), getDoc(doc(db, 'admins', u.uid))]);
       profile = p.exists() ? p.data() : null; adminFlag = a.exists();
+      if (profile && profile.verified !== true && (u.emailVerified || adminFlag)) { updateDoc(doc(db, 'users', u.uid), { verified: true }).catch(() => { }); profile.verified = true; }
     } catch (e) { }
   }
   layout();
