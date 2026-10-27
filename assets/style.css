@@ -810,3 +810,10 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,200,61,.7);box-sha
 .tk-lab{background:linear-gradient(180deg,#ffe58f,#ffc83d)}
 .ti{font-size:.86rem}.ti.hot{color:#ffe08a;text-shadow:0 0 14px rgba(255,200,61,.6)}
 body.has-tick{padding-bottom:48px}
+
+/* ===== tartalomvédelem: nincs kijelölés, nincs hosszú-nyomás menü, nincs képhúzás ===== */
+html,body{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+img,svg,canvas,a{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none}
+img{pointer-events:none}
+input,textarea,[contenteditable="true"]{-webkit-user-select:text;-moz-user-select:text;user-select:text}
+@media print{body{display:none!important}}
