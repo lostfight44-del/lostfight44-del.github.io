@@ -817,3 +817,32 @@ img,svg,canvas,a{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:non
 img{pointer-events:none}
 input,textarea,[contenteditable="true"]{-webkit-user-select:text;-moz-user-select:text;user-select:text}
 @media print{body{display:none!important}}
+
+/* ===== MOBIL JAVÍTÁS: gombok ne csonkuljanak, ne ragadjon be a hover ===== */
+.btn{height:auto;white-space:normal;text-align:center;line-height:1.25;padding-top:14px;padding-bottom:14px;max-width:100%;flex-shrink:0}
+.btn.sm{padding-top:10px;padding-bottom:10px}
+.tabs{padding:6px 4px 14px;margin-left:-4px;margin-right:-4px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
+.tabs a,.vtabs a{flex-shrink:0}
+@media(max-width:640px){
+  .cta,.hero2 .cta,#bnRow,#bnRow .row,.banner .row{display:flex;flex-direction:column;align-items:stretch;gap:10px;width:100%}
+  .cta .btn,.hero2.solo .cta .btn,#bnRow .btn,.banner .row .btn{width:100%;min-height:54px;padding:14px 20px;font-size:1rem}
+  .banner{padding:26px 20px;gap:18px}
+  .banner>div:first-child{width:100%}
+  .hero2.solo h1{font-size:clamp(2.2rem,11vw,3rem);max-width:none}
+  .sect-t{margin:44px 0 18px}
+  .stat{padding:20px 16px}
+  .tabs a{padding:11px 16px;font-size:.9rem}
+  .vtabs{display:flex;width:100%;overflow-x:auto;scrollbar-width:none}
+  .vtabs::-webkit-scrollbar{display:none}
+  .vtabs a{flex:1 0 auto;min-width:0;padding:9px 14px}
+  .tick{height:42px}
+}
+/* érintőképernyő: nincs "beragadó" hover (felugrás, nagyítás, fénycsík) */
+@media(hover:none){
+  .btn:hover,.btn.ghost:hover,.sp:hover,.tabs a:hover,.tl:hover{transform:none}
+  .btn:hover::after{left:-70%}
+  .sp:hover .e{transform:rotate(-10deg)}
+  .sp:hover{box-shadow:0 24px 50px -30px #000;border-color:var(--line)}
+  .sp:hover small{background:rgba(255,200,61,.14);color:var(--gold2);border-color:rgba(255,200,61,.4);box-shadow:none}
+  .btn:active,.sp:active{transform:scale(.98)}
+}
