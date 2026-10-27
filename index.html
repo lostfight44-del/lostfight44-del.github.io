@@ -14,11 +14,18 @@
 <canvas id="fx" aria-hidden="true"></canvas>
 <div id="hdr"></div>
 <main id="main">
-<section class="hero wrap">
-  <span class="eyebrow">Profi tippek · 5 sportág · Naponta frissítve</span>
-  <h1>Nyerő tippek, <span class="g">átlátható eredményekkel</span></h1>
-  <p class="lead">A VikingGOLD tippadói minden nap kidolgozott tippeket publikálnak labdarúgásban, jégkorongban, kézilabdában, teniszben és kosárlabdában. A tagok a végeredményeket bármikor visszanézhetik..</p>
-  <div class="cta"><a class="btn" href="/tippek">Mai tippek megnyitása</a><a class="btn ghost" id="ctaReg" href="/auth?mode=register">Ingyenes csatlakozás</a></div>
+<section class="hero hero2 wrap">
+  <div class="hero-t">
+    <h1>Tippek, amiket bármikor visszanézhetsz</h1>
+    <p class="lead">A VikingGOLD tippadói minden nap kidolgozott tippeket publikálnak labdarúgásban, jégkorongban, kézilabdában, teniszben és kosárlabdában. A végeredmények átláthatóak, a tagok bármikor visszanézhetik őket.</p>
+    <div class="cta"><a class="btn" href="/tippek">Mai tippek megnyitása</a><a class="btn ghost" id="ctaReg" href="/auth?mode=register">Ingyenes csatlakozás</a></div>
+  </div>
+  <aside class="hclock" aria-label="Pontos idő">
+    <div class="hc-l">Budapest, pontos idő</div>
+    <div class="hc-t" id="hcT">--:--<i>--</i></div>
+    <div class="hc-d" id="hcD">&nbsp;</div>
+    <div class="hc-bar"><i id="hcB"></i></div>
+  </aside>
 </section>
 <section class="wrap">
   <div class="stats">
