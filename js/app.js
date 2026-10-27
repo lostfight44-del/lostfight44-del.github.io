@@ -41,7 +41,31 @@ function toast(msg, type = 'ok') {
 const flashNext = (m, t = 'ok') => sessionStorage.setItem('vg_flash', JSON.stringify([m, t]));
 function showStoredFlash() { try { const f = JSON.parse(sessionStorage.getItem('vg_flash') || 'null'); if (f) { sessionStorage.removeItem('vg_flash'); toast(f[0], f[1]); } } catch (e) { } }
 
+/* Discord összekötés: a Discord Developer Portalon létrehozott alkalmazás Client ID-ja (OAuth2 → Client information) */
+const DISCORD_CLIENT_ID = '';
+
 const picOf = p => (p && typeof p.avatar === 'string' && p.avatar.startsWith('data:image/')) ? p.avatar : '';
+
+/* ---------- óra (Budapest) ---------- */
+let clockTimer = 0;
+function startClock() {
+  const tz = 'Europe/Budapest';
+  const tf = new Intl.DateTimeFormat('hu-HU', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const dShort = new Intl.DateTimeFormat('hu-HU', { timeZone: tz, weekday: 'long', month: 'short', day: 'numeric' });
+  const dLong = new Intl.DateTimeFormat('hu-HU', { timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const put = (id, h) => { const e = document.getElementById(id); if (e) e.innerHTML = h; };
+  const tick = () => {
+    const d = new Date(), p = {}; tf.formatToParts(d).forEach(x => { p[x.type] = x.value; });
+    const hh = (p.hour === '24' ? '00' : p.hour), hm = hh + ':' + p.minute;
+    put('clkT', hm + '<i>:' + p.second + '</i>'); put('clkD', dShort.format(d));
+    put('hcT', hm + '<i>' + p.second + '</i>'); put('hcD', dLong.format(d));
+    const b = document.getElementById('hcB');
+    if (b) { const s = +p.second; b.style.transition = s === 0 ? 'none' : 'width 1s linear'; b.style.width = (s === 0 ? 0 : (s + 1) / 60 * 100) + '%'; }
+  };
+  clearInterval(clockTimer); tick();
+  clockTimer = setInterval(() => { if (!document.hidden) tick(); }, 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+}
 
 /* ---------- oldalváz ---------- */
 function layout() {
@@ -52,12 +76,14 @@ function layout() {
   <a class="logo" href="/" aria-label="VikingGOLD"><span class="mark"><img src="/assets/logo.webp" alt="" width="46" height="46" style="display:block;width:46px;height:46px;object-fit:contain"></span><span class="wm">Viking<b>GOLD</b></span></a>
   <button class="burger" id="burger" aria-label="Menü" aria-expanded="false"><i></i><i></i><i></i></button>
   <nav class="nav" id="nav">${nav.map(([k, h, l]) => `<a href="${h}" class="${page === k ? 'on' : ''}">${l}</a>`).join('')}</nav>
+  <div class="clk" id="clk" aria-label="Pontos idő (Budapest)"><b id="clkT">--:--</b><small id="clkD"></small></div>
   <div class="usr" id="usr"><button class="uic" id="uic" aria-haspopup="true" aria-expanded="false" aria-label="Fiók">${picOf(profile) ? `<img src="${picOf(profile)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">` : `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>`}${user ? '<i class="dot"></i>' : ''}</button>
     <div class="menu" id="umenu" hidden>${user
       ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : 'Tag'}</small></div><a href="/tippek">Tippek</a><a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
   $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
+  startClock();
   // menü viselkedés
   const uic = $('#uic'), um = $('#umenu'), bg = $('#burger'), nv = $('#nav');
   uic.onclick = e => { e.stopPropagation(); um.hidden = !um.hidden; uic.setAttribute('aria-expanded', String(!um.hidden)); };
@@ -663,6 +689,9 @@ function settingsPage() {
       <div style="flex:1;min-width:220px"><p class="small" style="margin:0 0 10px">Ezt a képet látja mindenki a chatben, a tagok listáján és a kezdőlapon. Bármilyen képet választhatsz, a közepét négyzetre vágjuk és lekicsinyítjük.</p>
       <div class="row"><label class="btn sm ghost" for="picFile" style="margin:0;cursor:pointer">Kép kiválasztása</label><input id="picFile" type="file" accept="image/*" hidden>
       <button class="btn sm" id="picSave" type="button" disabled>Mentés</button><button class="btn sm danger" id="picDel" type="button">Eltávolítás</button></div></div></div></div>
+  <div class="card" id="dcCard"><h2>Discord</h2>
+    <p class="small" style="margin:0 0 12px">Kösd össze a Discord-fiókodat: a neved megjelenik a profilodon, és az adminok látják, melyik Discord-fiók a tiéd. Csak a Discord-neved és a profilképed azonosítóját kérjük el, a jelszavadhoz és az üzeneteidhez nem férünk hozzá.</p>
+    <div id="dcBox"></div></div>
   <div class="g2" style="align-items:start">
     <div class="card"><h2>Fiók</h2>
       <p style="margin:0 0 4px"><span class="small">E-mail</span><br><b>${esc(user.email)}</b> ${user.emailVerified || admin ? '<span class="pill g">megerősítve</span>' : '<span class="pill y">nincs megerősítve</span>'}</p>
@@ -715,6 +744,48 @@ function settingsPage() {
     try { await updateDoc(doc(db, 'users', user.uid), { avatar: '' }); flashNext('A profilképed eltávolítva.'); location.reload(); }
     catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
   };
+
+  /* Discord összekötés (OAuth2 implicit, csak 'identify') */
+  const dcDraw = () => {
+    const d = profile.discord, box = $('#dcBox');
+    if (d && d.id) {
+      const img = d.avatar ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(d.id)}/${encodeURIComponent(d.avatar)}.png?size=64` : '';
+      box.innerHTML = `<div class="row" style="gap:12px;align-items:center">${img ? `<img src="${img}" alt="" style="width:48px;height:48px;border-radius:50%">` : ''}<div style="flex:1;min-width:140px"><b>${esc(d.name || 'Discord-fiók')}</b><br><span class="pill g">összekötve</span></div><button class="btn sm danger" id="dcOff" type="button">Leválasztás</button></div>`;
+      $('#dcOff').onclick = async () => {
+        if (!confirm('Leválasztod a Discord-fiókodat?')) return;
+        try { await updateDoc(doc(db, 'users', user.uid), { discord: null }); profile.discord = null; dcDraw(); toast('A Discord-fiók leválasztva.'); }
+        catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
+      };
+    } else {
+      box.innerHTML = '<button class="btn sm" id="dcOn" type="button">Összekötés Discorddal</button>';
+      $('#dcOn').onclick = () => {
+        if (!DISCORD_CLIENT_ID) { toast('A Discord összekötés még nincs beállítva.', 'err'); return; }
+        const st = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+        sessionStorage.setItem('vg_dc_state', st);
+        location.href = 'https://discord.com/oauth2/authorize?' + new URLSearchParams({ client_id: DISCORD_CLIENT_ID, response_type: 'token', scope: 'identify', redirect_uri: location.origin + '/beallitasok', state: st });
+      };
+    }
+  };
+  dcDraw();
+  const hp = new URLSearchParams(location.hash.replace(/^#/, ''));
+  if (hp.get('access_token') || hp.get('error')) {
+    history.replaceState(null, '', location.pathname + location.search);
+    const okState = hp.get('state') && hp.get('state') === sessionStorage.getItem('vg_dc_state');
+    sessionStorage.removeItem('vg_dc_state');
+    if (hp.get('access_token') && okState) {
+      (async () => {
+        try {
+          const r = await fetch('https://discord.com/api/v10/users/@me', { headers: { Authorization: 'Bearer ' + hp.get('access_token') } });
+          if (!r.ok) throw new Error('Discord hiba (' + r.status + ')');
+          const j = await r.json();
+          const d = { id: String(j.id), name: String(j.global_name || j.username || '').slice(0, 40), avatar: j.avatar ? String(j.avatar) : '' };
+          await updateDoc(doc(db, 'users', user.uid), { discord: d });
+          profile.discord = d; dcDraw(); toast('A Discord-fiókod összekötve.');
+        } catch (x) { toast('Az összekötés nem sikerült: ' + (x.code || x.message), 'err'); }
+      })();
+    } else if (hp.get('error')) toast('Az összekötést megszakítottad.', 'err');
+    else toast('Az összekötés nem sikerült, próbáld újra.', 'err');
+  }
 
   $('#nameForm').onsubmit = async e => {
     e.preventDefault();
@@ -773,7 +844,7 @@ function settingsPage() {
     $('#mBody').innerHTML = l.length ? l.map(u => {
       const adm = isAdminName(u.name), me = u.id === user.uid;
       const stt = adm ? '<span class="pill v">Admin</span>' : u.disabled ? '<span class="pill r">Letiltva</span>' : '<span class="pill g">Aktív</span>';
-      return `<tr><td><b>${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td><td>${actOf(u)}</td>
+      return `<tr><td><b>${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}${u.discord && u.discord.id ? `<br><span class="small">Discord: ${esc(u.discord.name || u.discord.id)}</span>` : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td><td>${actOf(u)}</td>
       <td class="acts"><button class="btn sm ghost" data-rs="${u.id}">Jelszó-mail</button>${adm ? '' : `<button class="btn sm ghost" data-nm="${u.id}">Név</button><button class="btn sm ghost" data-dis="${u.id}">${u.disabled ? 'Feloldás' : 'Letiltás'}</button><button class="btn sm danger" data-rm="${u.id}">Törlés</button>`}</td></tr>`;
     }).join('') : '<tr><td colspan="6">Nincs találat.</td></tr>';
     const U = id => users.find(x => x.id === id);
