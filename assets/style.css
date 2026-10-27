@@ -426,3 +426,14 @@ input:hover,select:hover,textarea:hover{border-color:rgba(246,196,83,.35)}
 .psr{display:grid;grid-template-columns:1fr auto 54px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:.92rem}
 .psr:last-child{border-bottom:0}.psr .pp{text-align:right;font-family:var(--head);color:var(--gold2)}
 @media(max-width:760px){.pstats{grid-template-columns:1fr}.pct b{font-size:2.7rem}}
+
+/* ===== Telefon / lite mód: nincs üveg-elmosás, kevesebb árnyék és animáció -> nem laggol ===== */
+html.lite *,html.lite *::before,html.lite *::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.lite .top{background:rgba(5,7,13,.96)}
+html.lite .menu{background:rgba(12,17,28,.98)}
+html.lite .card,html.lite .panel,html.lite .tlog,html.lite .stat,html.lite .sp,html.lite .person,html.lite .sbx2,html.lite .banner{background:rgba(12,17,28,.93);box-shadow:0 0 0 1px rgba(255,255,255,.05)}
+html.lite .tl,html.lite .flash{animation:none!important}
+html.lite .tl:hover,html.lite .sp:hover,html.lite .person:hover,html.lite .btn:hover{transform:none}
+html.lite .bgfx i{will-change:auto;animation:none}
+html.lite .hero .lead,html.lite .hero h1,html.lite .sect-t{text-shadow:none}
+html.lite .reveal{transition-duration:.25s}
