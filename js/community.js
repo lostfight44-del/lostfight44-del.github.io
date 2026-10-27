@@ -372,7 +372,7 @@ export function chatPage(c) {
   /* ---- élő adatok ---- */
   onSnapshot(collection(db, 'admins'), sn => { adminUids = new Set([...sn.docs.map(d => d.id), ...(admin ? [me.uid] : [])]); render(); members(); }, () => { });
   onSnapshot(collection(db, 'users'), sn => { users = sn.docs.map(d => ({ id: d.id, ...d.data() })); users.forEach(u => { uMap[u.id] = u; }); members(); render(); const mb = document.querySelector('.dc-me .av'); if (mb) mb.outerHTML = av(me.name, admin, me.uid); }, () => { });
-  onSnapshot(collection(db, 'presence'), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); members(); }, () => { });
+  let presT = 0; onSnapshot(collection(db, 'presence'), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); clearTimeout(presT); presT = setTimeout(members, 3000); }, () => { });
   if (admin) onSnapshot(collection(db, 'chatMutes'), sn => { mutes = {}; sn.docs.forEach(d => { mutes[d.id] = d.data().until || 0; }); members(); }, () => { });
   else onSnapshot(doc(db, 'chatMutes', me.uid), s => { myMute = s.exists() ? (s.data().until || 0) : 0; composer(); }, () => { });
   const beat = () => { if (!document.hidden) setDoc(doc(db, 'presence', me.uid), { name: me.name, t: Date.now() }).catch(() => { }); };
