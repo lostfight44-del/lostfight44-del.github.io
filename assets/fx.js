@@ -1,6 +1,9 @@
 /* VikingGOLD – közös viselkedés */
 (function () {
   var $ = function (s) { return document.querySelector(s); };
+  // telefon / érintőképernyő: a nehéz effekteket (szikrák, parallax) kihagyjuk, hogy ne laggoljon
+  var LITE = matchMedia('(max-width:900px), (hover:none) and (pointer:coarse)').matches;
+  if (LITE) document.documentElement.classList.add('lite');
 
   // felhasználói menü
   var uic = $('#uic'), um = $('#umenu');
@@ -53,7 +56,7 @@
     var w = document.createElement('div'), im = document.createElement('i');
     w.className = 'bgfx'; w.setAttribute('aria-hidden', 'true'); w.appendChild(im);
     document.body.insertBefore(w, document.body.firstChild);
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (LITE || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var tk = false, K = 0.22;
     var upd = function () { tk = false; var y = Math.max(0, window.pageYOffset || document.documentElement.scrollTop || 0), room = Math.max(0, w.clientHeight - im.offsetHeight); im.style.transform = 'translate3d(0,' + Math.min(y * K, room).toFixed(1) + 'px,0)'; };
     addEventListener('resize', upd); addEventListener('load', upd);
@@ -63,11 +66,12 @@
 
   // háttér: finom szikrák
   var cv = document.getElementById('fx');
-  if (cv && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (cv && LITE) cv.style.display = 'none';
+  if (cv && !LITE && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     var x = cv.getContext('2d'), W, H, P = [];
     var rs = function () {
       W = cv.width = innerWidth; H = cv.height = innerHeight;
-      P = Array.from({ length: Math.min(70, Math.floor(W / 20)) }, function () {
+      P = Array.from({ length: Math.min(45, Math.floor(W / 30)) }, function () {
         return { x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.7 + .4, vy: -(Math.random() * .3 + .06), vx: (Math.random() - .5) * .15, a: Math.random() * .5 + .12, c: Math.random() < .5 ? '56,189,248' : '168,85,247' };
       });
     };
@@ -79,7 +83,7 @@
           p.x += p.vx; p.y += p.vy;
           if (p.y < -5) { p.y = H + 5; p.x = Math.random() * W; }
           x.beginPath(); x.arc(p.x, p.y, p.r, 0, 6.283);
-          x.fillStyle = 'rgba(' + p.c + ',' + p.a + ')'; x.shadowBlur = 8; x.shadowColor = 'rgb(' + p.c + ')'; x.fill();
+          x.fillStyle = 'rgba(' + p.c + ',' + p.a + ')'; x.fill();
         });
       }
       requestAnimationFrame(f);
