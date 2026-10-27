@@ -90,3 +90,23 @@
     })();
   }
 })();
+
+/* ===== Tartalomvédelem: nem kijelölhető / másolható szöveg (egér, érintés, billentyűzet) ===== */
+(function () {
+  var isField = function (t) { return !!(t && t.closest && t.closest('input,textarea,select,[contenteditable="true"]')); };
+  var stop = function (e) { if (!isField(e.target)) { e.preventDefault(); return false; } };
+  ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(function (n) { document.addEventListener(n, stop, true); });
+  // hosszú nyomás / kijelölés telefonon: ha mégis lenne kijelölés, azonnal megszűnik
+  document.addEventListener('selectionchange', function () {
+    var a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+    var s = window.getSelection && window.getSelection();
+    if (s && s.rangeCount && !s.isCollapsed) s.removeAllRanges();
+  });
+  document.addEventListener('keydown', function (e) {
+    var k = (e.key || '').toLowerCase(), c = e.ctrlKey || e.metaKey;
+    var blockCombo = c && ['c', 'x', 'a', 'u', 's', 'p'].indexOf(k) > -1 && !isField(e.target);
+    var devtools = e.key === 'F12' || (c && e.shiftKey && ['i', 'j', 'c'].indexOf(k) > -1) || (e.metaKey && e.altKey && ['i', 'j', 'u'].indexOf(k) > -1);
+    if (blockCombo || devtools) { e.preventDefault(); e.stopPropagation(); return false; }
+  }, true);
+})();
