@@ -46,6 +46,20 @@ export const LEAGUES = {
     L('Bajnokok Ligája (EHF)'), L('Európa Liga (EHF)'),
     L('Válogatott', 'Magyarország|Dánia|Franciaország|Svédország|Spanyolország|Németország|Norvégia|Horvátország|Szlovénia|Portugália|Izland|Egyiptom|Argentína|Brazília|Hollandia|Szerbia|Svájc|Csehország|Észak-Macedónia|Lengyelország')
   ],
+  kosarlabda: [
+    L('NBA', 'Atlanta Hawks|Boston Celtics|Brooklyn Nets|Charlotte Hornets|Chicago Bulls|Cleveland Cavaliers|Dallas Mavericks|Denver Nuggets|Detroit Pistons|Golden State Warriors|Houston Rockets|Indiana Pacers|LA Clippers|Los Angeles Lakers|Memphis Grizzlies|Miami Heat|Milwaukee Bucks|Minnesota Timberwolves|New Orleans Pelicans|New York Knicks|Oklahoma City Thunder|Orlando Magic|Philadelphia 76ers|Phoenix Suns|Portland Trail Blazers|Sacramento Kings|San Antonio Spurs|Toronto Raptors|Utah Jazz|Washington Wizards'),
+    L('EuroLeague', 'Real Madrid|Barcelona|Olympiacos|Panathinaikos|Fenerbahçe|Anadolu Efes|Partizan|Crvena zvezda|Baskonia|Maccabi Tel Aviv|Žalgiris Kaunas|Bayern München|Monaco|Virtus Bologna|Olimpia Milano|ASVEL|Paris Basketball|Hapoel Tel Aviv|Dubai Basketball|Valencia'),
+    L('EuroCup', 'Valencia|Joventut Badalona|Lyon-Villeurbanne|Bursaspor|Hapoel Jerusalem|Turk Telekom|Cedevita Olimpija|Buducnost|Trento|Umana Reyer Venezia|Wolves Vilnius|Bahçeşehir|London Lions|Ulm|Gran Canaria|Level Up Szeged'),
+    L('ACB (Spanyolország)', 'Real Madrid|Barcelona|Baskonia|Valencia|Unicaja|Joventut Badalona|Gran Canaria|Lenovo Tenerife|Bilbao Basket|Murcia|Manresa|Girona|Zaragoza|Breogán|Andorra|Obradoiro|Río Breogán|Granada|Surne Bilbao'),
+    L('NB I/A férfi (Magyarország)', 'Falco Szombathely|Szolnoki Olajbányász|Alba Fehérvár|Atomerőmű SE|Egis Körmend|DEAC|Zalaegerszegi TE|Kaposvár|Sopron Basket|PVSK-Panthers|Debreceni EAC|Jászberényi KSE|Kecskeméti TE|Budapest Honvéd'),
+    L('NB I/A női (Magyarország)', 'Sopron Basket|DKSK|Euroleasing Sopron|PEAC-Pécs|Atomerőmű KSC Szekszárd|Győri ETO|Uni Győr|MTK Budapest|Cegléd|BEAC|Szigetszentmiklós|Vasas Akadémia|DVTK Miskolc'),
+    L('Válogatott', 'Magyarország|USA|Spanyolország|Franciaország|Szerbia|Németország|Görögország|Litvánia|Olaszország|Kanada|Ausztrália|Szlovénia|Horvátország|Lettország|Finnország|Törökország|Brazília|Argentína'),
+  ],
+  tenisz: [
+    L('Grand Slam', ''), L('ATP Masters 1000', ''), L('ATP 500', ''), L('ATP 250', ''), L('ATP Finals', ''), L('ATP Challenger', ''),
+    L('WTA 1000', ''), L('WTA 500', ''), L('WTA 250', ''), L('WTA Finals', ''), L('ITF', ''),
+    L('Davis-kupa', ''), L('Billie Jean King-kupa', ''),
+  ],
 };
 
 /* Európai kupák: a csapatlista az összes hazai bajnokság klubjaiból áll (a válogatott kivételével) */
@@ -60,4 +74,12 @@ export const LEAGUES = {
   const hb = LEAGUES.kezilabda || [];
   const clubs = [...new Set(hb.filter(l => l.n !== 'Válogatott').flatMap(l => l.t))].sort((a, b) => a.localeCompare(b, 'hu'));
   hb.forEach(l => { if (/EHF/.test(l.n) && !l.t.length) l.t = clubs; });
+})();
+
+/* Tenisz: a tornák játékosai (férfi / női); kézzel bármilyen név beírható */
+(() => {
+  const men = 'Jannik Sinner|Carlos Alcaraz|Novak Djokovic|Alexander Zverev|Daniil Medvedev|Taylor Fritz|Alex de Minaur|Jack Draper|Ben Shelton|Lorenzo Musetti|Holger Rune|Casper Ruud|Andrey Rublev|Stefanos Tsitsipas|Tommy Paul|Félix Auger-Aliassime|Alexei Popyrin|Frances Tiafoe|Grigor Dimitrov|Ugo Humbert|Karen Khachanov|Jakub Menšík|Joao Fonseca|Arthur Fils|Flavio Cobolli|Alexander Bublik|Francisco Cerundolo|Learner Tien|Hubert Hurkacz|Matteo Berrettini|Fucsovics Márton|Valkusz Máté|Piros Zsombor|Marozsán Fábián'.split('|');
+  const women = 'Aryna Sabalenka|Iga Świątek|Coco Gauff|Jessica Pegula|Elena Rybakina|Madison Keys|Amanda Anisimova|Mirra Andreeva|Jasmine Paolini|Qinwen Zheng|Emma Navarro|Elina Svitolina|Naomi Osaka|Jelena Ostapenko|Karolina Muchová|Victoria Mboko|Ekaterina Alexandrova|Paula Badosa|Marta Kostyuk|Belinda Bencic|Diana Shnaider|Clara Tauson|Daria Kasatkina|Linda Nosková|Gálfi Dalma|Bondár Anna|Udvardy Panna|Stollár Fanny|Jani Réka'.split('|');
+  const m = n => /^(ATP|Davis)/.test(n) || n === 'Grand Slam' || n === 'ITF', w = n => /^(WTA|Billie)/.test(n) || n === 'Grand Slam' || n === 'ITF';
+  (LEAGUES.tenisz || []).forEach(l => { l.t = [...(m(l.n) ? men : []), ...(w(l.n) ? women : [])].sort((a, b) => a.localeCompare(b, 'hu')); });
 })();
