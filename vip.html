@@ -3,68 +3,71 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f4f1ea">
+<meta name="theme-color" content="#080f1c">
 <title>VIP Klub | VikingGOLD</title>
 <script>if(/\.html$/.test(location.pathname))history.replaceState(null,"",location.pathname.replace(/\.html$/,"")+location.search+location.hash)</script>
 <link rel="icon" href="/assets/favicon-32.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f4f1ea;--card:#fff;--ink:#16211c;--mut:#6b7a72;--line:#e5e0d3;--g:#0e3b2c;--g2:#165a43;--au:#a8812f;--win:#17804f;--loss:#c0392b;--r:16px}
+:root{--bg:#080f1c;--card:#0f1a2d;--ink:#e7f0fc;--mut:#8497b4;--line:#1c2b45;--g:#8ecbff;--g2:#5aa9e6;--au:#a9d8ff;--win:#4ade9a;--loss:#ff7b6b;--r:16px}
 *{box-sizing:border-box;margin:0}
-html{background:var(--bg)}
+html{background:var(--bg);color-scheme:dark}
 body{font:15px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
 h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:700;letter-spacing:-.01em}
 a{color:inherit;text-decoration:none}
-.bar{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:max(12px,env(safe-area-inset-top)) 20px 12px}
-.bar>div{max-width:980px;margin:auto;display:flex;align-items:center;gap:14px}
+.bar{position:sticky;top:0;z-index:5;background:rgba(8,15,28,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:max(12px,env(safe-area-inset-top)) 20px 0}
+.bar>div{max-width:980px;margin:auto;display:flex;align-items:center;gap:14px;padding-bottom:12px}
 .brand{font:700 1.25rem Fraunces,serif;display:flex;align-items:center;gap:10px}
-.brand i{font-style:normal;font:700 .68rem Inter;letter-spacing:.14em;color:#fff;background:var(--g);padding:4px 9px;border-radius:99px}
+.brand i{font-style:normal;font:700 .68rem Inter;letter-spacing:.14em;color:#06101f;background:var(--g);padding:4px 9px;border-radius:99px}
 .sp{flex:1}.who{font-size:.85rem;color:var(--mut)}
-.lnk{font-size:.85rem;font-weight:600;color:var(--g);padding:8px 14px;border:1px solid var(--line);border-radius:99px;background:#fff}
+.nav{max-width:980px;margin:auto;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:0}
+.nav a{font-size:.85rem;font-weight:600;color:var(--mut);padding:9px 14px;border-bottom:2px solid transparent;white-space:nowrap}
+.nav a:hover{color:var(--ink)}.nav a.on{color:var(--g);border-color:var(--g)}
 .wrap{max-width:980px;margin:auto;padding:26px 20px 70px}
 .hero{padding:10px 0 22px}
-.hero small{color:var(--au);font-weight:700;letter-spacing:.16em;font-size:.72rem;text-transform:uppercase}
+.hero small{color:var(--g);font-weight:700;letter-spacing:.16em;font-size:.72rem;text-transform:uppercase}
 .hero h1{font-size:clamp(1.9rem,5vw,2.7rem);line-height:1.1;margin:6px 0 8px}
 .hero p{color:var(--mut);max-width:560px}
-.sum{background:var(--g);color:#fff;border-radius:22px;padding:22px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
-.sum div{border-left:1px solid rgba(255,255,255,.14);padding-left:16px}.sum div:first-child{border:0;padding:0}
-.sum b{display:block;font:700 1.9rem Fraunces,serif}.sum span{font-size:.78rem;opacity:.7;letter-spacing:.04em}
-.sum .pos{color:#8ee6b8}.sum .neg{color:#ffb4a8}
+.sum{background:linear-gradient(135deg,#112543,#0c1a30);border:1px solid #1f3a60;color:#fff;border-radius:22px;padding:22px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.sum div{border-left:1px solid rgba(142,203,255,.16);padding-left:16px}.sum div:first-child{border:0;padding:0}
+.sum b{display:block;font:700 1.9rem Fraunces,serif}.sum span{font-size:.74rem;color:var(--mut);letter-spacing:.06em}
+.sum .pos{color:var(--win)}.sum .neg{color:var(--loss)}
 .cats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
 .cat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
 .cat h3{font-size:1rem;display:flex;gap:8px;align-items:center}.cat p{color:var(--mut);font-size:.8rem;margin-top:6px}
 .cat b{color:var(--g);font-size:1.15rem}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.tab{border:1px solid var(--line);background:#fff;color:var(--ink);font:600 .85rem Inter;padding:9px 16px;border-radius:99px;cursor:pointer}
-.tab.on{background:var(--g);color:#fff;border-color:var(--g)}
-.tabs.sub .tab{font-weight:500;font-size:.8rem;padding:6px 12px}.tabs.sub .tab.on{background:var(--ink);border-color:var(--ink)}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 .85rem Inter;padding:9px 16px;border-radius:99px;cursor:pointer}
+.tab.on{background:var(--g);color:#06101f;border-color:var(--g)}
+.tabs.sub .tab{font-weight:500;font-size:.8rem;padding:6px 12px}.tabs.sub .tab.on{background:#1d3558;color:var(--g);border-color:#2b4c7a}
 .tip{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:10px;display:grid;grid-template-columns:4px 1fr auto;gap:16px;align-items:center}
 .tip .st{align-self:stretch;border-radius:4px;background:var(--line)}
-.tip.win .st{background:var(--win)}.tip.loss .st{background:var(--loss)}.tip.void .st{background:#b9b3a3}
+.tip.win .st{background:var(--win)}.tip.loss .st{background:var(--loss)}.tip.void .st{background:#56688a}.tip.pend .st{background:var(--g2)}
 .meta{font-size:.75rem;color:var(--mut);letter-spacing:.03em;margin-bottom:3px}
 .match{font:700 1.05rem Fraunces,serif}
-.pick{margin-top:6px;font-size:.9rem}.pick b{background:#eef5f0;color:var(--g);padding:2px 10px;border-radius:99px}
+.pick{margin-top:6px;font-size:.9rem}.pick b{background:#15294a;color:var(--g);padding:2px 10px;border-radius:99px}
 .note{color:var(--mut);font-size:.82rem;margin-top:6px}
 .right{text-align:right}.odd{font:700 1.4rem Fraunces,serif;color:var(--au)}
 .pill{display:inline-block;font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:99px;margin-top:4px;border:0;font-family:inherit}
-.pill.pend{background:#f3efe2;color:#8a6d22}.pill.win{background:#dff3e8;color:var(--win)}.pill.loss{background:#fbe4e0;color:var(--loss)}.pill.void{background:#eceae3;color:#7b7667}
+.pill.pend{background:#16294a;color:var(--g)}.pill.win{background:#0f3a2a;color:var(--win)}.pill.loss{background:#43191a;color:var(--loss)}.pill.void{background:#1c2940;color:#8497b4}
 .adm{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
-.btn{font:600 .85rem Inter;background:var(--g);color:#fff;border:0;border-radius:12px;padding:11px 18px;cursor:pointer}
-.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.sm{padding:5px 10px;font-size:.74rem;border-radius:8px}.btn.del{color:var(--loss)}
+.btn{font:600 .85rem Inter;background:var(--g);color:#06101f;border:0;border-radius:12px;padding:11px 18px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}.btn.sm{padding:5px 10px;font-size:.74rem;border-radius:8px}.btn.del{color:var(--loss)}
 .form{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:16px;display:none}
 .form.open{display:block}
 .fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
 label{font-size:.72rem;font-weight:600;color:var(--mut);display:block;margin-bottom:4px}
-input,select{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfaf6;color:var(--ink)}
-input:focus,select:focus{outline:2px solid var(--g2);outline-offset:0;background:#fff}
+input,select{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#0a1424;color:var(--ink)}
+input:focus,select:focus{outline:2px solid var(--g2);outline-offset:0}
 .empty,.gate{text-align:center;color:var(--mut);background:var(--card);border:1px dashed var(--line);border-radius:var(--r);padding:36px 20px}
-.gate{margin-top:40px;padding:50px 24px;border-style:solid}.gate h2{color:var(--ink);font-size:1.6rem;margin:8px 0}
+.gate{margin-top:40px;padding:50px 24px;border-style:solid}.gate h2{color:var(--ink);font-size:1.6rem;margin:8px 0}.gate>div:first-child{color:var(--g)}
 .top2{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 @media(max-width:700px){.sum{grid-template-columns:1fr 1fr}.sum div:nth-child(3){border:0;padding:0}.cats{grid-template-columns:1fr}.tip{grid-template-columns:4px 1fr}.right{grid-column:2;text-align:left;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.adm{margin:0}.who{display:none}}
 </style>
 </head>
 <body>
-<div class="bar"><div><a class="brand" href="/vip">Viking<span style="color:var(--au)">GOLD</span><i>VIP</i></a><span class="sp"></span><span class="who" id="who"></span><a class="lnk" href="/">← Főoldal</a></div></div>
+<div class="bar"><div><a class="brand" href="/vip">Viking<span style="color:var(--g)">GOLD</span><i>VIP</i></a><span class="sp"></span><span class="who" id="who"></span></div>
+<nav class="nav"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a class="on" href="/vip">★ VIP</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/elerhetosegek">Elérhetőségek</a><a href="/beallitasok">Beállítások</a></nav></div>
 <main class="wrap" id="app"><div class="empty">Betöltés…</div></main>
 <script type="module">
 import { firebaseConfig } from '/js/firebase-config.js';
@@ -90,7 +93,7 @@ async function init(u) {
   if (!isAdmin && !(p && p.vip && !p.disabled)) return gate('Ez a rész VIP tagoknak szól', 'Kérd meg valamelyik admint, hogy adjon VIP rangot a fiókodnak.', '<p style="margin-top:18px"><a class="btn ghost" href="/elerhetosegek">Elérhetőségek</a></p>');
   const me = (p && p.name) || u.email.split('@')[0];
   onSnapshot(query(collection(db, 'vipTips'), orderBy('date', 'desc'), limit(500)), s => { tips = s.docs.map(d => ({ id: d.id, ...d.data() })); draw(me); },
-    e => gate('Nem tölthető be', esc(e.code || e.message) + ' – ellenőrizd a Firestore szabályokat (vipTips).'));
+    e => gate('Nem tölthető be', esc(e.code || e.message) + ' – töltsd fel a firestore.rules fájl tartalmát a Firebase Console → Firestore → Rules részbe, és nyomd meg a Publish gombot.'));
 }
 
 const rec = l => { const w = l.filter(t => t.status === 'win').length, x = l.filter(t => t.status === 'loss').length;
