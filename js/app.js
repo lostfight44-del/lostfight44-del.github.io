@@ -216,21 +216,24 @@ function statCss() {
 @media(max-width:760px){#statBox{grid-template-columns:minmax(0,1fr)}.vgs{padding:20px 18px 14px}.vgs-pct{font-size:3rem}}`;
   document.head.appendChild(st);
 }
-function homeStats(tips, err) {
-  try { homeStatsDraw(tips, err); }
-  catch (e) { const b = $('#statBox'); if (b) b.innerHTML = `<div class="card psx"><div class="big">⚠️</div><p class="small" style="font-size:.95rem">A statisztika kiszámítása nem sikerült.</p><p class="small" style="word-break:break-word;color:var(--bad)">${esc(String((e && e.message) || e))}</p></div>`; }
+function homeStats(tips, err, id = 'statBox', vip = false) {
+  try { homeStatsDraw(tips, err, id, vip); }
+  catch (e) { const b = $('#' + id); if (b) b.innerHTML = `<div class="card psx"><div class="big">⚠️</div><p class="small" style="font-size:.95rem">A statisztika kiszámítása nem sikerült.</p><p class="small" style="word-break:break-word;color:var(--bad)">${esc(String((e && e.message) || e))}</p></div>`; }
 }
-function homeStatsDraw(tips, err) {
-  const box = $('#statBox'); if (!box) return;
+const vipEff = t => { const s = t.status || 'pend'; if (s !== 'pend') return s; return ((t.result || t.corners) && evalTip({ ...t, sport: sportOf(t) })) || 'pend'; };
+function homeStatsDraw(tips, err, id = 'statBox', vip = false) {
+  const box = $('#' + id); if (!box) return;
   statCss();
+  const EF = vip ? vipEff : effStatus, PRE = vip ? 'VIP ' : '';
   if (!tips) {
-    const msg = tips === null ? 'A statisztikát a regisztrált, belépett tagok látják.' : 'A statisztika most nem tölthető be.' + (err ? `<br><span style="color:var(--bad);word-break:break-word">${esc(String(err.code || err.message || err))}</span>` : '');
-    const cta = tips === null ? '<div class="row" style="justify-content:center;margin-top:14px"><a class="btn" href="/auth?mode=register">Regisztráció</a><a class="btn ghost" href="/auth?mode=login">Belépés</a></div>' : '';
-    box.innerHTML = `<div class="vgs vgs-x"><div class="big">${tips === null ? '🔒' : '⚠️'}</div><p style="font-size:.95rem">${msg}</p>${cta}</div>`;
+    const denied = vip && err && /permission/i.test(String(err.code || err.message || err));
+    const msg = tips === null || denied ? (vip ? 'A VIP statisztikát a VIP tagok látják.' : 'A statisztikát a regisztrált, belépett tagok látják.') : 'A statisztika most nem tölthető be.' + (err ? `<br><span style="color:var(--bad);word-break:break-word">${esc(String(err.code || err.message || err))}</span>` : '');
+    const cta = tips === null && !(vip && user) ? '<div class="row" style="justify-content:center;margin-top:14px"><a class="btn" href="/auth?mode=register">Regisztráció</a><a class="btn ghost" href="/auth?mode=login">Belépés</a></div>' : '';
+    box.innerHTML = `<div class="vgs vgs-x"><div class="big">${tips === null || denied ? '🔒' : '⚠️'}</div><p style="font-size:.95rem">${msg}</p>${denied ? '' : cta}</div>`;
     return;
   }
   const R = statRanges(), inR = (t, r) => String(t.date || '') >= r[0] && String(t.date || '') < r[1];
-  const tally = l => { const r = { w: 0, l: 0, v: 0, p: 0 }; l.forEach(t => { let st = 'pend'; try { st = effStatus(t); } catch (e) { } r[{ win: 'w', loss: 'l', void: 'v' }[st] || 'p']++; }); r.dec = r.w + r.l; r.pct = r.dec ? Math.round(r.w / r.dec * 100) : null; r.all = l.length; return r; };
+  const tally = l => { const r = { w: 0, l: 0, v: 0, p: 0 }; l.forEach(t => { let st = 'pend'; try { st = EF(t); } catch (e) { } r[{ win: 'w', loss: 'l', void: 'v' }[st] || 'p']++; }); r.dec = r.w + r.l; r.pct = r.dec ? Math.round(r.w / r.dec * 100) : null; r.all = l.length; return r; };
   const pc = r => r.pct == null ? '–' : r.pct + '%';
   const card = (title, range, cur, prev, prevLab, list) => {
     const sp = SPORTS.map(([k, n, e]) => { const r = tally(list.filter(t => sportOf(t) === k)); return r.all ? `<div class="vgs-r"><span class="n">${e} ${n}</span><span class="m"><u style="width:${r.pct || 0}%"></u></span><span class="s">${r.w} | ${r.dec}</span><b>${pc(r)}</b></div>` : ''; }).join('');
@@ -245,13 +248,20 @@ function homeStatsDraw(tips, err) {
       ${cur.all ? `<div class="vgs-sp">${sp}</div>` : ''}</div>`;
   };
   const wl = tips.filter(t => inR(t, R.week)), ml = tips.filter(t => inR(t, R.month));
-  box.innerHTML = card('Heti statisztika', R.weekLab, tally(wl), tally(tips.filter(t => inR(t, R.pweek))), 'Előző hét', wl) + card('Havi statisztika', R.monthLab, tally(ml), tally(tips.filter(t => inR(t, R.pmonth))), 'Előző hónap', ml);
+  box.innerHTML = card(PRE + 'Heti statisztika', R.weekLab, tally(wl), tally(tips.filter(t => inR(t, R.pweek))), 'Előző hét', wl) + card(PRE + 'Havi statisztika', R.monthLab, tally(ml), tally(tips.filter(t => inR(t, R.pmonth))), 'Előző hónap', ml);
 }
 
 function watchStats() {
   const done = sn => homeStats(sn.docs.map(d => ({ id: d.id, ...d.data() })));
   onSnapshot(query(collection(db, 'tips'), where('date', '>=', statRanges().from)), done,
     e1 => onSnapshot(query(collection(db, 'tips'), orderBy('date', 'desc'), limit(1000)), done, e2 => homeStats(undefined, e2 || e1)));   // ha a szűrt lekérdezés nem megy, a Tippek oldalival azonos módon próbáljuk
+}
+
+function watchVipStats() {
+  const done = sn => homeStats(sn.docs.map(d => ({ id: d.id, ...d.data() })), null, 'vipStatBox', true);
+  const fail = e => homeStats(undefined, e, 'vipStatBox', true);
+  onSnapshot(query(collection(db, 'vipTips'), where('date', '>=', statRanges().from)), done,
+    e1 => onSnapshot(query(collection(db, 'vipTips'), orderBy('date', 'desc'), limit(1000)), done, e2 => fail(e2 || e1)));
 }
 
 /* ---------- kezdőlap ---------- */
@@ -274,7 +284,8 @@ function homePage() {
   if (member) {
     onSnapshot(query(collection(db, 'tips'), where('date', '==', ymd(new Date()))), s => { $('#stToday').textContent = s.size; }, () => { });
     watchStats();
-  } else homeStats(null);
+    if (profile && (profile.vip || isAdmin())) watchVipStats(); else homeStats(null, null, 'vipStatBox', true);
+  } else { homeStats(null); homeStats(null, null, 'vipStatBox', true); }
 }
 
 
