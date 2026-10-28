@@ -973,3 +973,9 @@ tr.vip-row{background:linear-gradient(90deg,rgba(168,85,247,.20),rgba(168,85,247
 /* főoldali banner: olvasható szöveg a sötét hátteren */
 .banner p,.banner div p{color:#cbd5e1!important;font-weight:500!important;opacity:1!important}
 .banner h3{color:#fff!important}
+
+/* aktív tagok: admin piros, VIP arany */
+.chip.adm{border-color:rgba(255,64,84,.75)!important;background:rgba(255,64,84,.16)!important;color:#ffb3bc!important;box-shadow:0 0 16px -6px rgba(255,64,84,.7)!important}
+.chip.adm i{color:#ff4d5e!important}
+.chip.vipc{border-color:rgba(251,191,36,.7)!important;background:rgba(251,191,36,.13)!important;color:#fde68a!important;box-shadow:0 0 16px -6px rgba(251,191,36,.6)!important}
+.chip.vipc i{color:#fbbf24!important}
