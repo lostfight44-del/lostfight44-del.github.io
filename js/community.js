@@ -2,7 +2,7 @@
    Az app.js tölti be, csak az /updates és /chat oldalakon. */
 import {
   collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot,
-  query, orderBy, limit, serverTimestamp, arrayUnion, arrayRemove
+  query, orderBy, where, limit, serverTimestamp, arrayUnion, arrayRemove
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const URL_RE = /(https?:\/\/[^\s<>"']+)/g;
@@ -145,7 +145,7 @@ export function chatPage(c) {
   const me = { uid: user.uid, name: (profile && profile.name) || user.displayName || user.email.split('@')[0] };
   const hashRoom = (location.hash || '').slice(1), saved = localStorage.getItem('vg_room');
   let room = [hashRoom, saved].find(r => ROOMS.some(x => x[0] === r)) || 'altalanos';
-  let lim = 60, msgs = [], unsub = null, hasMore = false, replyTo = null, editing = null, editDraft = '';
+  let lim = 40, msgs = [], unsub = null, hasMore = false, replyTo = null, editing = null, editDraft = '';
   let adminUids = new Set(admin ? [me.uid] : []), mutes = {}, myMute = 0, users = [], pres = {};
   let stick = true, lastSend = 0, lastTopId = null, sending = false;
 
@@ -197,7 +197,7 @@ export function chatPage(c) {
   }
   function switchRoom(r) {
     if (r === room) return;
-    room = r; window.vgChatRoom = r; lim = 60; replyTo = null; editing = null; stick = true; lastTopId = null;
+    room = r; window.vgChatRoom = r; lim = 40; replyTo = null; editing = null; stick = true; lastTopId = null;
     localStorage.setItem('vg_room', r); history.replaceState(null, '', '#' + r);
     chList(); composer(); replyBar(); sub();
   }
@@ -255,7 +255,7 @@ export function chatPage(c) {
     if (!wantBottom && top && top !== lastTopId && msgs[msgs.length - 1].uid !== me.uid) $('#newBtn').hidden = false;
     if (wantBottom) $('#newBtn').hidden = true;
     lastTopId = top; stick = false;
-    const mb = $('#moreBtn'); if (mb) mb.onclick = () => { lim += 60; sub(); };
+    const mb = $('#moreBtn'); if (mb) mb.onclick = () => { lim += 40; sub(); };
     const ed = $('#edTa'); if (ed) { ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); ed.oninput = () => { editDraft = ed.value; }; ed.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') { editing = null; render(); } }; }
     pinBar(); markRead();
   }
@@ -353,7 +353,7 @@ export function chatPage(c) {
   /* ---- tagok ---- */
   function members() {
     const now = Date.now(), list = users.filter(u => !u.disabled);
-    const online = u => u.id === me.uid || (pres[u.id] && now - pres[u.id] < 150000);
+    const online = u => u.id === me.uid || (pres[u.id] && now - pres[u.id] < 660000);
     const A = [], O = [], F = [];
     list.forEach(u => (isAdm(u.id, u.name) ? A : online(u) ? O : F).push(u));
     const s = (a, b) => String(a.name).localeCompare(String(b.name));
@@ -372,11 +372,11 @@ export function chatPage(c) {
   /* ---- élő adatok ---- */
   onSnapshot(collection(db, 'admins'), sn => { adminUids = new Set([...sn.docs.map(d => d.id), ...(admin ? [me.uid] : [])]); render(); members(); }, () => { });
   onSnapshot(collection(db, 'users'), sn => { users = sn.docs.map(d => ({ id: d.id, ...d.data() })); users.forEach(u => { uMap[u.id] = u; }); members(); render(); const mb = document.querySelector('.dc-me .av'); if (mb) mb.outerHTML = av(me.name, admin, me.uid); }, () => { });
-  let presT = 0; onSnapshot(collection(db, 'presence'), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); clearTimeout(presT); presT = setTimeout(members, 3000); }, () => { });
+  let presT = 0, presUn = null;
+  const presSub = () => { if (presUn) presUn(); presUn = onSnapshot(query(collection(db, 'presence'), where('t', '>', Date.now() - 15 * 60e3), orderBy('t', 'desc'), limit(200)), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); clearTimeout(presT); presT = setTimeout(members, 3000); }, () => { }); };
+  presSub(); setInterval(presSub, 12 * 60e3);   // a lekérdezés időablaka így csúszik előre
   if (admin) onSnapshot(collection(db, 'chatMutes'), sn => { mutes = {}; sn.docs.forEach(d => { mutes[d.id] = d.data().until || 0; }); members(); }, () => { });
   else onSnapshot(doc(db, 'chatMutes', me.uid), s => { myMute = s.exists() ? (s.data().until || 0) : 0; composer(); }, () => { });
-  const beat = () => { if (!document.hidden) setDoc(doc(db, 'presence', me.uid), { name: me.name, t: Date.now() }).catch(() => { }); };
-  beat(); setInterval(beat, 60000); document.addEventListener('visibilitychange', beat);
   setInterval(members, 60000);
   setInterval(() => { if (myMute && myMute < Date.now() + 1000) composer(); }, 15000);
 
