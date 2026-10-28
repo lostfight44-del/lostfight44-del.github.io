@@ -70,7 +70,8 @@ function startClock() {
 /* ---------- oldalváz ---------- */
 function layout() {
   if (!document.querySelector('link[rel=manifest]')) document.head.insertAdjacentHTML('beforeend', '<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"><link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png"><link rel="shortcut icon" href="/assets/favicon.ico"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"><meta property="og:image" content="/assets/logo.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="VikingGOLD">');
-  const nav = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['updates', '/updates', 'Updates'], ['chat', '/chat', 'Chat'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
+  const nav0 = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['updates', '/updates', 'Updates'], ['chat', '/chat', 'Chat'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
+  const nav = nav0.concat(user && (adminFlag || (profile && profile.vip)) ? [['vip', '/vip', '★ VIP']] : []);
   $('#hdr').innerHTML = `
 <header class="top">
   <a class="logo" href="/" aria-label="VikingGOLD"><span class="mark"><img src="/assets/logo.webp" alt="" width="46" height="46" style="display:block;width:46px;height:46px;object-fit:contain"></span><span class="wm">Viking<b>GOLD</b></span></a>
@@ -79,7 +80,7 @@ function layout() {
   <div class="clk" id="clk" aria-label="Pontos idő (Budapest)"><b id="clkT">--:--</b><small id="clkD"></small></div>
   <div class="usr" id="usr"><button class="uic" id="uic" aria-haspopup="true" aria-expanded="false" aria-label="Fiók">${picOf(profile) ? `<img src="${picOf(profile)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">` : `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>`}${user ? '<i class="dot"></i>' : ''}</button>
     <div class="menu" id="umenu" hidden>${user
-      ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : 'Tag'}</small></div><a href="/tippek">Tippek</a><a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
+      ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : profile && profile.vip ? 'VIP tag' : 'Tag'}</small></div><a href="/tippek">Tippek</a>${isAdmin() || (profile && profile.vip) ? '<a href="/vip" style="color:#d4a93c;font-weight:700">★ VIP Klub</a>' : ''}<a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
   $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, tenisz és kosárlabda tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
@@ -844,9 +845,9 @@ function settingsPage() {
     $('#mCount').textContent = '(' + users.length + ' · online: ' + users.filter(u => u.id === user.uid || (pres[u.id] && Date.now() - pres[u.id] < ON_MS)).length + ')';
     $('#mBody').innerHTML = l.length ? l.map(u => {
       const adm = isAdminName(u.name), me = u.id === user.uid;
-      const stt = adm ? '<span class="pill v">Admin</span>' : u.disabled ? '<span class="pill r">Letiltva</span>' : '<span class="pill g">Aktív</span>';
+      const stt = (adm ? '<span class="pill v">Admin</span>' : u.disabled ? '<span class="pill r">Letiltva</span>' : '<span class="pill g">Aktív</span>') + (u.vip ? ' <span class="pill v" style="background:#a8812f;color:#fff">★ VIP</span>' : '');
       return `<tr><td><b>${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}${u.discord && u.discord.id ? `<br><span class="small">Discord: ${esc(u.discord.name || u.discord.id)}</span>` : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td><td>${actOf(u)}</td>
-      <td class="acts"><button class="btn sm ghost" data-rs="${u.id}">Jelszó-mail</button>${adm ? '' : `<button class="btn sm ghost" data-nm="${u.id}">Név</button><button class="btn sm ghost" data-dis="${u.id}">${u.disabled ? 'Feloldás' : 'Letiltás'}</button><button class="btn sm danger" data-rm="${u.id}">Törlés</button>`}</td></tr>`;
+      <td class="acts"><button class="btn sm ghost" data-rs="${u.id}">Jelszó-mail</button>${adm ? '' : `<button class="btn sm ghost" data-vip="${u.id}">${u.vip ? 'VIP elvétel' : '★ VIP adás'}</button><button class="btn sm ghost" data-nm="${u.id}">Név</button><button class="btn sm ghost" data-dis="${u.id}">${u.disabled ? 'Feloldás' : 'Letiltás'}</button><button class="btn sm danger" data-rm="${u.id}">Törlés</button>`}</td></tr>`;
     }).join('') : '<tr><td colspan="6">Nincs találat.</td></tr>';
     const U = id => users.find(x => x.id === id);
     $('#mBody').querySelectorAll('[data-rs]').forEach(b => b.onclick = async () => {
@@ -854,6 +855,7 @@ function settingsPage() {
       if (!confirm('Jelszó-visszaállító levelet küldesz ide: ' + em + ' ?')) return;
       try { await sendReset(em); toast('A jelszó-levél elment: ' + em + ' (5 percig érvényes).'); } catch (x) { toast(resetErr(x), 'err'); }
     });
+    $('#mBody').querySelectorAll('[data-vip]').forEach(b => b.onclick = async () => { const u = U(b.dataset.vip); try { await updateDoc(doc(db, 'users', u.id), { vip: !u.vip }); toast(u.vip ? 'A VIP rang elvéve.' : u.name + ' mostantól VIP tag.'); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } });
     $('#mBody').querySelectorAll('[data-nm]').forEach(b => b.onclick = async () => {
       const u = U(b.dataset.nm), nn = (prompt('Új felhasználónév ennek a tagnak: ' + u.name, u.name) || '').trim();
       if (!nn || nn === u.name) return;
