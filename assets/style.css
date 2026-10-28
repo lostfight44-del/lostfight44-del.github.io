@@ -969,3 +969,7 @@ tr.vip-row{background:linear-gradient(90deg,rgba(168,85,247,.20),rgba(168,85,247
   .sports .sp,.sports .sp:last-child{grid-column:span 2}
   .sports .sp:nth-child(4),.sports .sp:nth-child(5){grid-column:span 3}
 }
+
+/* főoldali banner: olvasható szöveg a sötét hátteren */
+.banner p,.banner div p{color:#cbd5e1!important;font-weight:500!important;opacity:1!important}
+.banner h3{color:#fff!important}
