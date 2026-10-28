@@ -1,6 +1,6 @@
 /* VikingGOLD – Értesítések: olvasatlan-számlálók (Chat / Updates), böngészős és telefonos push.
    Az app.js tölti be, minden oldalon, belépett + megerősített tagnak. */
-import { collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, where, limit, Timestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 /* >>> A valódi (zárt oldal melletti) telefonos értesítéshez ide kell a Web Push kulcs:
    Firebase Console → Project settings → Cloud Messaging → Web Push certificates → Key pair.
@@ -30,14 +30,14 @@ export function init(c) {
   const st = document.createElement('style');
   st.textContent = `.nbadge{display:inline;margin-left:6px;color:#ff4d63!important;font-weight:800;font-size:.92em;font-style:normal;text-shadow:0 0 10px rgba(255,84,104,.5)}.nav a.on .nbadge{color:#9f1239!important;text-shadow:none}
   .vgt-w{position:fixed;right:16px;bottom:16px;z-index:300;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 32px))}
-  .vgt{display:flex;gap:10px;padding:12px 14px;border-radius:14px;background:#141822;border:1px solid rgba(246,196,83,.4);box-shadow:0 18px 40px -12px #000;cursor:pointer;animation:vgtin .25s both;color:#eceef4;font-size:.88rem;line-height:1.35}
-  .vgt b{display:block;color:#ffdc82;font-size:.86rem}.vgt span{color:#c3c8d6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+  .vgt{display:flex;gap:10px;padding:12px 14px;border-radius:14px;background:#141822;border:1px solid rgba(168,85,247,.4);box-shadow:0 18px 40px -12px #000;cursor:pointer;animation:vgtin .25s both;color:#eceef4;font-size:.88rem;line-height:1.35}
+  .vgt b{display:block;color:#d9b8ff;font-size:.86rem}.vgt span{color:#c3c8d6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
   @keyframes vgtin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
   .vgm{position:fixed;inset:0;z-index:310;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:18px}
   .vgm>div{width:min(440px,100%);max-height:92vh;overflow:auto;padding:24px;border-radius:18px;background:#141822;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px -20px #000}
   .vgm h3{font-size:1.15rem;margin-bottom:6px}.vgm .tg{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,.08);cursor:pointer;font-size:.92rem;color:#eceef4;margin:0;letter-spacing:0;font-weight:500}
   .vgm .tg input{width:18px;height:18px;padding:0;margin-top:2px;flex:none}.vgm .tg small{display:block;color:#8a93a8;font-size:.8rem}
-  .vgm .ok{color:#86efac;font-weight:700}.vgm .wn{color:#ffb3bd}.vgm .nt{background:rgba(246,196,83,.08);border:1px solid rgba(246,196,83,.3);border-radius:12px;padding:10px 12px;font-size:.84rem;color:#d7dbe6;margin:10px 0}`;
+  .vgm .ok{color:#86efac;font-weight:700}.vgm .wn{color:#ffb3bd}.vgm .nt{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:10px 12px;font-size:.84rem;color:#d7dbe6;margin:10px 0}`;
   document.head.appendChild(st);
 
   /* ---------- számlálók ---------- */
@@ -93,14 +93,16 @@ export function init(c) {
   /* ---------- élő figyelők ---------- */
   ROOMS.forEach(r => {
     let first = true;
-    onSnapshot(query(collection(db, 'chatRooms', r, 'messages'), orderBy('ts', 'desc'), limit(15)), sn => {
+    // csak a legutóbbi olvasás óta érkezett üzeneteket kérjük le (nem az utolsó 15-öt minden oldalbetöltésnél)
+    const since = Timestamp.fromMillis(Math.max(+localStorage.getItem(readKey(r)) || 0, Date.now() - 3 * 864e5));
+    onSnapshot(query(collection(db, 'chatRooms', r, 'messages'), where('ts', '>', since), orderBy('ts', 'desc'), limit(20)), sn => {
       lastMsgs[r] = sn.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { uid: x.uid, t: x.ts && x.ts.toMillis ? x.ts.toMillis() : Date.now() }; });
       if (!first) sn.docChanges().forEach(ch => { if (ch.type === 'added' && !ch.doc.metadata.hasPendingWrites) onChat(r, ch.doc.data()); });
       first = false; recompute();
     }, () => { });
   });
   let firstU = true;
-  onSnapshot(query(collection(db, 'updates'), orderBy('created', 'desc'), limit(20)), sn => {
+  onSnapshot(query(collection(db, 'updates'), where('created', '>', Math.max(+localStorage.getItem('vg_upd_seen') || 0, Date.now() - 14 * 864e5)), orderBy('created', 'desc'), limit(20)), sn => {
     updDocs = sn.docs.map(d => d.data());
     if (!firstU) sn.docChanges().forEach(ch => {
       const x = ch.doc.data();
