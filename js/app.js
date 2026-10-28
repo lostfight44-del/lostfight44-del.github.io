@@ -96,7 +96,7 @@ function layout() {
 
 
 /* ---------- közös ---------- */
-const SPORTS = [['labdarugas', 'Labdarúgás', '⚽'], ['jegkorong', 'Jégkorong', '🏒'], ['kezilabda', 'Kézilabda', '🤾']];
+const SPORTS = [['labdarugas', 'Labdarúgás', '⚽'], ['jegkorong', 'Jégkorong', '🏒'], ['kezilabda', 'Kézilabda', '🤾'], ['kosarlabda', 'Kosárlabda', '🏀'], ['tenisz', 'Tenisz', '🎾']];
 const SPORT_KEYS = SPORTS.map(x => x[0]);
 const sportOf = t => SPORT_KEYS.includes(t.sport) ? t.sport : (t.sport ? 'x' : 'jegkorong');   // régi tippek = jégkorong
 const LAB = { pend: 'Függőben', win: 'Nyert', loss: 'Vesztett', void: 'Érvénytelen' };
