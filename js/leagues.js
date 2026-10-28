@@ -54,3 +54,10 @@ export const LEAGUES = {
   const clubs = [...new Set(fb.filter(l => l.n !== 'Válogatott').flatMap(l => l.t))].sort((a, b) => a.localeCompare(b, 'hu'));
   fb.forEach(l => { if (['Bajnokok Ligája', 'Európa-liga', 'Konferencia-liga'].includes(l.n) && !l.t.length) l.t = clubs; });
 })();
+
+/* Kézilabda EHF-kupák: a hazai bajnokságok klubjaiból */
+(() => {
+  const hb = LEAGUES.kezilabda || [];
+  const clubs = [...new Set(hb.filter(l => l.n !== 'Válogatott').flatMap(l => l.t))].sort((a, b) => a.localeCompare(b, 'hu'));
+  hb.forEach(l => { if (/EHF/.test(l.n) && !l.t.length) l.t = clubs; });
+})();
