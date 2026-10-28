@@ -83,7 +83,7 @@ function layout() {
       ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : profile && profile.vip ? 'VIP tag' : 'Tag'}</small></div><a href="/tippek">Tippek</a>${isAdmin() || (profile && profile.vip) ? '<a href="/vip" style="color:#d4a93c;font-weight:700">★ VIP Klub</a>' : ''}<a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
-  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong és kézilabda tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
+  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, kosárlabda és tenisz tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
   startClock();
   // menü viselkedés
   const uic = $('#uic'), um = $('#umenu'), bg = $('#burger'), nv = $('#nav');
@@ -220,6 +220,7 @@ function homeStats(tips, err, id = 'statBox', vip = false) {
   try { homeStatsDraw(tips, err, id, vip); }
   catch (e) { const b = $('#' + id); if (b) b.innerHTML = `<div class="card psx"><div class="big">⚠️</div><p class="small" style="font-size:.95rem">A statisztika kiszámítása nem sikerült.</p><p class="small" style="word-break:break-word;color:var(--bad)">${esc(String((e && e.message) || e))}</p></div>`; }
 }
+const VIP_KEYS = ['labdarugas', 'jegkorong', 'kezilabda'];
 const vipEff = t => { const s = t.status || 'pend'; if (s !== 'pend') return s; return ((t.result || t.corners) && evalTip({ ...t, sport: sportOf(t) })) || 'pend'; };
 function homeStatsDraw(tips, err, id = 'statBox', vip = false) {
   const box = $('#' + id); if (!box) return;
@@ -232,21 +233,23 @@ function homeStatsDraw(tips, err, id = 'statBox', vip = false) {
     box.innerHTML = `<div class="vgs vgs-x"><div class="big">${tips === null || denied ? '🔒' : '⚠️'}</div><p style="font-size:.95rem">${msg}</p>${denied ? '' : cta}</div>`;
     return;
   }
+  if (vip) tips = tips.filter(t => VIP_KEYS.includes(t.sport));
   const R = statRanges(), inR = (t, r) => String(t.date || '') >= r[0] && String(t.date || '') < r[1];
   const tally = l => { const r = { w: 0, l: 0, v: 0, p: 0 }; l.forEach(t => { let st = 'pend'; try { st = EF(t); } catch (e) { } r[{ win: 'w', loss: 'l', void: 'v' }[st] || 'p']++; }); r.dec = r.w + r.l; r.pct = r.dec ? Math.round(r.w / r.dec * 100) : null; r.all = l.length; return r; };
   const pc = r => r.pct == null ? '–' : r.pct + '%';
   const card = (title, range, cur, prev, prevLab, list) => {
-    const sp = SPORTS.map(([k, n, e]) => { const r = tally(list.filter(t => sportOf(t) === k)); return r.all ? `<div class="vgs-r"><span class="n">${e} ${n}</span><span class="m"><u style="width:${r.pct || 0}%"></u></span><span class="s">${r.w} | ${r.dec}</span><b>${pc(r)}</b></div>` : ''; }).join('');
-    const dlt = cur.pct != null && prev.pct != null ? cur.pct - prev.pct : null;
+    const sp = SPORTS.filter(x => !vip || VIP_KEYS.includes(x[0])).map(([k, n, e]) => { const r = tally(list.filter(t => sportOf(t) === k)); return r.all ? `<div class="vgs-r"><span class="n">${e} ${n}</span><span class="m"><u style="width:${r.pct || 0}%"></u></span><span class="s">${r.w} | ${r.dec}</span><b>${pc(r)}</b></div>` : ''; }).join('');
+    const dlt = prev && cur.pct != null && prev.pct != null ? cur.pct - prev.pct : null;
     const dh = dlt == null ? '' : `<i class="${dlt > 0 ? 'up' : dlt < 0 ? 'dn' : 'eq'}">${dlt > 0 ? '▲' : dlt < 0 ? '▼' : '='} ${Math.abs(dlt)} százalékpont</i>`;
     return `<div class="vgs"><div class="vgs-h"><span>${title}</span><small>${range}</small></div>
       <div class="vgs-main"><div class="vgs-pct">${cur.pct == null ? '–' : cur.pct + '<i>%</i>'}</div><div class="vgs-lab"><b>találati arány</b><span>${cur.dec ? cur.w + ' | ' + cur.dec + ' lezárt tipp' : 'még nincs lezárt tipp'}</span></div></div>
       <div class="vgs-bar"><u style="width:${cur.pct || 0}%"></u></div>
       <div class="vgs-grid"><div class="vgs-c w"><b>${cur.w}</b><span>Nyert</span></div><div class="vgs-c l"><b>${cur.l}</b><span>Vesztett</span></div><div class="vgs-c"><b>${cur.v}</b><span>Érvénytelen</span></div><div class="vgs-c"><b>${cur.p}</b><span>Függőben</span></div></div>
-      <div class="vgs-cmp"><span>${prevLab}</span><b>${pc(prev)}</b>${prev.dec ? `<em>${prev.w} | ${prev.dec}</em>` : '<em>nincs lezárt tipp</em>'}${dh}</div>
-      <p class="vgs-tot">Az időszak összes tippje: ${cur.all}</p>
+      ${prev ? `<div class="vgs-cmp"><span>${prevLab}</span><b>${pc(prev)}</b>${prev.dec ? `<em>${prev.w} | ${prev.dec}</em>` : '<em>nincs lezárt tipp</em>'}${dh}</div>` : ''}
+      <p class="vgs-tot">${prev ? 'Az időszak összes tippje' : 'Az összes VIP tipp'}: ${cur.all}</p>
       ${cur.all ? `<div class="vgs-sp">${sp}</div>` : ''}</div>`;
   };
+  if (vip) { box.innerHTML = card('VIP statisztika', 'Összesítve, az indulástól', tally(tips), null, '', tips); return; }
   const wl = tips.filter(t => inR(t, R.week)), ml = tips.filter(t => inR(t, R.month));
   box.innerHTML = card(PRE + 'Heti statisztika', R.weekLab, tally(wl), tally(tips.filter(t => inR(t, R.pweek))), 'Előző hét', wl) + card(PRE + 'Havi statisztika', R.monthLab, tally(ml), tally(tips.filter(t => inR(t, R.pmonth))), 'Előző hónap', ml);
 }
@@ -260,8 +263,7 @@ function watchStats() {
 function watchVipStats() {
   const done = sn => homeStats(sn.docs.map(d => ({ id: d.id, ...d.data() })), null, 'vipStatBox', true);
   const fail = e => homeStats(undefined, e, 'vipStatBox', true);
-  onSnapshot(query(collection(db, 'vipTips'), where('date', '>=', statRanges().from)), done,
-    e1 => onSnapshot(query(collection(db, 'vipTips'), orderBy('date', 'desc'), limit(1000)), done, e2 => fail(e2 || e1)));
+  onSnapshot(query(collection(db, 'vipTips'), orderBy('date', 'desc'), limit(2000)), done, fail);
 }
 
 /* ---------- kezdőlap ---------- */
@@ -545,8 +547,8 @@ function tippekPage() {
     const v = k => esc(f[k] ?? '');
     $('#formBox').innerHTML = `<div class="panel fpanel"><h2 style="font-size:1.2rem">${t ? 'Tipp szerkesztése' : 'Új tipp feltöltése'}</h2><form id="tf" autocomplete="off">
     <div class="g3"><div><label>Sportág</label><select id="f_sport">${SPORTS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></div><div><label>Dátum</label><input type="date" id="f_date" required value="${v('date')}"></div><div><label>Kezdés <span class="opt">(opc.)</span></label><input type="time" id="f_time" value="${v('time')}"></div></div>
-    <div class="g2"><div><label>Liga / bajnokság <b style="color:#ff6b7d">*</b></label><select id="f_league"></select></div></div>
-    <div class="g2"><div><label>Hazai csapat</label><select id="f_hs" disabled></select><input id="f_home" hidden></div><div><label>Vendég csapat</label><select id="f_as" disabled></select><input id="f_away" hidden></div></div>
+    <div class="g2"><div><label>Liga / bajnokság <b style="color:#ff6b7d">*</b></label><input id="f_league" list="dlLg" placeholder="Válassz a listából, vagy írd be a ligát" autocomplete="off"><datalist id="dlLg"></datalist></div></div>
+    <div class="g2"><div><label>Hazai csapat</label><input id="f_home" list="dlH" placeholder="Válassz vagy írd be a hazai csapatot" autocomplete="off" disabled><datalist id="dlH"></datalist></div><div><label>Vendég csapat</label><input id="f_away" list="dlA" placeholder="Válassz vagy írd be a vendég csapatot" autocomplete="off" disabled><datalist id="dlA"></datalist></div></div>
     <p class="hint" id="f_lock"></p>
     <datalist id="dlLines"></datalist>
     <fieldset id="rest" disabled style="border:0;padding:0;margin:0;min-width:0">
@@ -558,21 +560,21 @@ function tippekPage() {
     <div class="row" style="margin-top:18px"><button class="btn" type="submit">Mentés</button><button class="btn ghost" type="button" id="fcancel">Mégse</button></div></fieldset></form></div>`;
     const E = id => $('#' + id), sport = () => E('f_sport').value;
     const leaguesOf = () => LG[sport()] || [];
-    const stage = () => { const l = !!E('f_league').value, h = l && !!E('f_home').value, a = h && !!E('f_away').value;
-      E('f_hs').disabled = !l; E('f_as').disabled = !h; E('rest').disabled = !a;
+    const stage = () => { const l = !!E('f_league').value.trim(), h = l && !!E('f_home').value.trim(), a = h && !!E('f_away').value.trim();
+      E('f_home').disabled = !l; E('f_away').disabled = !h; E('rest').disabled = !a;
       const lk = E('f_lock'); lk.hidden = a; lk.textContent = !l ? '🔒 Először válaszd ki a ligát.' : !h ? '🔒 Most a hazai csapatot válaszd ki.' : '🔒 Most a vendég csapatot válaszd ki.'; };
     const curLg = () => leaguesOf().find(l => l.n === E('f_league').value);
     function fillTeams(keep) {   // csak a kiválasztott liga csapatai; a már kiválasztott csapat a másik listából kimarad
       if (!keep) { E('f_home').value = ''; E('f_away').value = ''; }
       const lg = curLg(), base = lg ? lg.t.slice() : [], hv = E('f_home').value, av = E('f_away').value;
       [hv, av].forEach(x => { if (x && !base.includes(x)) base.push(x); });   // régi, listán kívüli név se vesszen el szerkesztéskor
-      const mk = (ex, cur, ph) => `<option value="">${ph}</option>` + base.filter(x => x !== ex).map(x => `<option${x === cur ? ' selected' : ''}>${esc(x)}</option>`).join('');
-      E('f_hs').innerHTML = mk(av, hv, '– válassz hazai csapatot –'); E('f_as').innerHTML = mk(hv, av, '– válassz vendég csapatot –');
+      const mk = ex => base.filter(x => x !== ex).map(x => `<option value="${esc(x)}">`).join('');
+      E('dlH').innerHTML = mk(av); E('dlA').innerHTML = mk(hv);
       stage(); if (typeof prev === 'function') prev();
     }
     function fillLeagues(cur) {
-      const ls = leaguesOf(), list = ls.map(l => l.n); if (cur && !list.includes(cur)) list.push(cur);
-      E('f_league').innerHTML = '<option value="">– válassz ligát –</option>' + list.map(n => `<option>${esc(n)}</option>`).join('');
+      const ls = leaguesOf(), list = ls.map(l => l.n);
+      E('dlLg').innerHTML = list.map(n => `<option value="${esc(n)}">`).join('');
       E('f_league').value = cur || ''; stage();
     }
     function fillMarkets(curMk) {
@@ -613,20 +615,22 @@ function tippekPage() {
     prev();
 
     E('f_sport').onchange = () => { fillLeagues(''); fillTeams(false); fillMarkets(''); };
-    E('f_league').onchange = () => fillTeams(false);
-    [['f_hs', 'f_home'], ['f_as', 'f_away']].forEach(([s, i]) => E(s).onchange = () => { E(i).value = E(s).value; fillTeams(true); });
+    E('f_league').oninput = () => fillTeams(true);
+    E('f_league').onchange = () => { const lg = curLg(); if (lg && lg.t.length) ['f_home', 'f_away'].forEach(i => { if (E(i).value && !lg.t.includes(E(i).value)) E(i).value = ''; }); fillTeams(true); };
+    ['f_home', 'f_away'].forEach(i => { E(i).oninput = () => fillTeams(true); E(i).onchange = () => fillTeams(true); });
     E('f_mk').onchange = () => fillMarket();
-    ['f_sd', 'f_ln', 'f_home', 'f_away', 'f_free'].forEach(id => { E(id).oninput = prev; E(id).onchange = prev; });
+    ['f_sd', 'f_ln', 'f_free'].forEach(id => { E(id).oninput = prev; E(id).onchange = prev; });
     $('#formBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
     $('#fcancel').onclick = () => { $('#formBox').innerHTML = ''; };
     $('#tf').onsubmit = async e => {
       e.preventDefault();
-      if (!E('f_league').value || !E('f_home').value || !E('f_away').value) { toast('Válaszd ki a ligát és a két csapatot.', 'err'); return; }
+      if (!E('f_league').value.trim() || !E('f_home').value.trim() || !E('f_away').value.trim()) { toast('Add meg a ligát és a két csapatot.', 'err'); return; }
+      if (E('f_home').value.trim().toLowerCase() === E('f_away').value.trim().toLowerCase()) { toast('A két csapat nem lehet ugyanaz.', 'err'); return; }
       const m = mktDef(sport(), E('f_mk').value), ln = readLn(), pick = curPick();
       if (m.line && ln == null) { toast('Add meg a vonalat (pl. 2.5 vagy -1.5).', 'err'); return; }
       if (!pick) { toast('Add meg a fő tippet.', 'err'); return; }
       const odds = parseFloat(String(E('f_odds').value).replace(',', '.'));
-      const lgSel = E('f_league').value;
+      const lgSel = E('f_league').value.trim();
       const row = { sport: sport(), date: E('f_date').value, time: E('f_time').value, league: lgSel, home: E('f_home').value.trim(), away: E('f_away').value.trim(), mk: m.free ? '' : m.k, sd: m.free ? '' : E('f_sd').value, ln: m.line ? ln : null, pick, odds: odds > 1 ? Math.round(odds * 100) / 100 : 0, tipster: E('f_tipster').value, status: E('f_status').value, result: E('f_result').value.trim() };
       if (row.result) { const r = evalTip(row); if (r) row.status = r; }
       (e.submitter || e.target.querySelector('[type=submit]')).disabled = true;
