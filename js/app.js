@@ -227,7 +227,7 @@ function homeStatsDraw(tips, err, id = 'statBox', vip = false) {
   const EF = vip ? vipEff : effStatus, PRE = vip ? 'VIP ' : '';
   if (!tips) {
     const denied = vip && err && /permission/i.test(String(err.code || err.message || err));
-    const msg = tips === null || denied ? (vip ? 'A VIP statisztikát a VIP tagok látják.' : 'A statisztikát a regisztrált, belépett tagok látják.') : 'A statisztika most nem tölthető be.' + (err ? `<br><span style="color:var(--bad);word-break:break-word">${esc(String(err.code || err.message || err))}</span>` : '');
+    const msg = tips === null || denied ? (vip ? (denied ? 'A VIP statisztika most nem érhető el.' + (isAdmin() ? ' (Admin: a Firestore szabályban a vipTips olvasását engedélyezd a belépett tagoknak.)' : '') : 'A VIP statisztikát a belépett tagok látják.') : 'A statisztikát a regisztrált, belépett tagok látják.') : 'A statisztika most nem tölthető be.' + (err ? `<br><span style="color:var(--bad);word-break:break-word">${esc(String(err.code || err.message || err))}</span>` : '');
     const cta = tips === null && !(vip && user) ? '<div class="row" style="justify-content:center;margin-top:14px"><a class="btn" href="/auth?mode=register">Regisztráció</a><a class="btn ghost" href="/auth?mode=login">Belépés</a></div>' : '';
     box.innerHTML = `<div class="vgs vgs-x"><div class="big">${tips === null || denied ? '🔒' : '⚠️'}</div><p style="font-size:.95rem">${msg}</p>${denied ? '' : cta}</div>`;
     return;
@@ -284,7 +284,7 @@ function homePage() {
   if (member) {
     onSnapshot(query(collection(db, 'tips'), where('date', '==', ymd(new Date()))), s => { $('#stToday').textContent = s.size; }, () => { });
     watchStats();
-    if (profile && (profile.vip || isAdmin())) watchVipStats(); else homeStats(null, null, 'vipStatBox', true);
+    watchVipStats();
   } else { homeStats(null); homeStats(null, null, 'vipStatBox', true); }
 }
 
