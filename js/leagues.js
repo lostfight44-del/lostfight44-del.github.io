@@ -46,21 +46,11 @@ export const LEAGUES = {
     L('Bajnokok Ligája (EHF)'), L('Európa Liga (EHF)'),
     L('Válogatott', 'Magyarország|Dánia|Franciaország|Svédország|Spanyolország|Németország|Norvégia|Horvátország|Szlovénia|Portugália|Izland|Egyiptom|Argentína|Brazília|Hollandia|Szerbia|Svájc|Csehország|Észak-Macedónia|Lengyelország')
   ],
-  tenisz: [
-    L('ATP', 'Jannik Sinner|Carlos Alcaraz|Novak Djokovic|Alexander Zverev|Taylor Fritz|Ben Shelton|Daniil Medvedev|Alex de Minaur|Lorenzo Musetti|Holger Rune|Andrey Rublev|Casper Ruud|Tommy Paul|Frances Tiafoe|Stefanos Tsitsipas|Grigor Dimitrov|Félix Auger-Aliassime|Jack Draper|Hubert Hurkacz|Karen Khachanov|Jakub Menšík|Alexei Popyrin|Ugo Humbert|Arthur Fils|Flavio Cobolli|Learner Tien|João Fonseca|Marozsán Fábián|Fucsovics Márton|Piros Zsombor|Valentin Vacherot|Arthur Rinderknech|Alejandro Davidovich Fokina|Francisco Cerúndolo|Tallon Griekspoor|Denis Shapovalov'),
-    L('WTA', 'Aryna Sabalenka|Iga Świątek|Coco Gauff|Jessica Pegula|Elena Rybakina|Madison Keys|Amanda Anisimova|Mirra Andreeva|Jasmine Paolini|Qinwen Zheng|Emma Navarro|Naomi Osaka|Paula Badosa|Barbora Krejčíková|Elina Svitolina|Ekaterina Alexandrova|Karolína Muchová|Marta Kostyuk|Diana Shnaider|Liudmila Samsonova|Belinda Bencic|Victoria Mboko|Jelena Ostapenko|Clara Tauson|Gálfi Dalma|Bondár Anna|Udvardy Panna|Stollár Fanny'),
-    L('Grand Slam'), L('ATP Challenger'), L('WTA 125'), L('ITF'), L('Davis Kupa'), L('Billie Jean King Kupa')
-  ],
-  kosarlabda: [
-    L('NBA', 'Atlanta Hawks|Boston Celtics|Brooklyn Nets|Charlotte Hornets|Chicago Bulls|Cleveland Cavaliers|Dallas Mavericks|Denver Nuggets|Detroit Pistons|Golden State Warriors|Houston Rockets|Indiana Pacers|Los Angeles Clippers|Los Angeles Lakers|Memphis Grizzlies|Miami Heat|Milwaukee Bucks|Minnesota Timberwolves|New Orleans Pelicans|New York Knicks|Oklahoma City Thunder|Orlando Magic|Philadelphia 76ers|Phoenix Suns|Portland Trail Blazers|Sacramento Kings|San Antonio Spurs|Toronto Raptors|Utah Jazz|Washington Wizards'),
-    L('EuroLeague', 'Real Madrid|FC Barcelona|Olympiacos|Panathinaikos|Fenerbahçe|Anadolu Efes|Baskonia|Maccabi Tel Aviv|AS Monaco|Partizan Belgrade|Crvena zvezda|Žalgiris Kaunas|Virtus Bologna|Bayern München|Valencia Basket|LDLC ASVEL|Dubai Basketball|Hapoel Tel Aviv|Paris Basketball|Olimpia Milano'),
-    L('EuroCup'), L('Bajnokok Ligája (FIBA)'),
-    L('NB I/A (Magyarország)', 'Falco Szombathely|Szolnoki Olajbányász|Egis Körmend|PVSK Panthers|DEAC|Atomerőmű SE|Alba Fehérvár|Zalaegerszegi TE KK|Kaposvári KK|Debreceni EAC|Győri Egyetemi Atlétikai Club|Szedeák|Jászberényi KSE|Hübner Nyíregyháza BS|BC Gyöngyös'),
-    L('ACB (Spanyolország)', 'Real Madrid|FC Barcelona|Baskonia|Valencia Basket|Unicaja|Joventut Badalona|Gran Canaria|Lenovo Tenerife|Bilbao Basket|Girona|Manresa|Murcia|Río Breogán|Zaragoza|Andorra|Granada|Breogán|Obradoiro'),
-    L('BBL (Németország)', 'Alba Berlin|Bayern München|ratiopharm Ulm|Niners Chemnitz|Telekom Baskets Bonn|Oldenburg|Hamburg Towers|Rostock Seawolves|Würzburg Baskets|Ludwigsburg|Bamberg|Heidelberg|Göttingen|Trier|Braunschweig|Vechta'),
-    L('Lega Basket (Olaszország)', 'Olimpia Milano|Virtus Bologna|Venezia|Brescia|Trento|Trieste|Reggio Emilia|Napoli|Cremona|Tortona|Sassari|Varese|Treviso|Pesaro|Brindisi|Scafati'),
-    L('LNB Élite (Franciaország)', 'AS Monaco|LDLC ASVEL|Paris Basketball|Nanterre|Le Mans|Dijon|Chalon|Strasbourg|Boulazac|Limoges|Gravelines|Cholet|Le Portel|Bourg|Nancy|Saint-Quentin'),
-    L('Török BSL', 'Fenerbahçe|Anadolu Efes|Beşiktaş|Galatasaray|Tofaş|Bahçeşehir|Türk Telekom|Karşıyaka|Pınar Karşıyaka|Merkezefendi|Manisa|Bursaspor'),
-    L('Válogatott', 'Magyarország|USA|Szerbia|Németország|Franciaország|Spanyolország|Görögország|Litvánia|Olaszország|Szlovénia|Kanada|Ausztrália|Törökország|Lettország|Finnország|Horvátország|Lengyelország|Csehország')
-  ]
 };
+
+/* Európai kupák: a csapatlista az összes hazai bajnokság klubjaiból áll (a válogatott kivételével) */
+(() => {
+  const fb = LEAGUES.labdarugas || [];
+  const clubs = [...new Set(fb.filter(l => l.n !== 'Válogatott').flatMap(l => l.t))].sort((a, b) => a.localeCompare(b, 'hu'));
+  fb.forEach(l => { if (['Bajnokok Ligája', 'Európa-liga', 'Konferencia-liga'].includes(l.n) && !l.t.length) l.t = clubs; });
+})();
