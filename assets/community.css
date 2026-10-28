@@ -142,3 +142,7 @@
 body[data-page="chat"] .foot{display:none}
 
 .av.pic{background:#0a0d15;overflow:hidden}.av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+
+.dc-hd .nm.vip,.mb span.vip{color:#c08bff}
+.bdg.vipb{background:rgba(168,85,247,.2);border:1px solid rgba(168,85,247,.6);color:#e9d5ff}
+.mb:has(span.vip){background:linear-gradient(90deg,rgba(168,85,247,.22),rgba(168,85,247,.04));border-radius:10px}
