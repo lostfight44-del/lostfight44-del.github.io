@@ -585,6 +585,7 @@ function tippekPage() {
     const readLn = () => { const n = parseFloat(String(E('f_ln').value).replace(',', '.').replace('−', '-')); return isNaN(n) ? null : n; };
     function curPick() {
       const m = mktDef(sport(), E('f_mk').value);
+      if (!m) return '';
       if (m.free) return E('f_free').value.trim();
       if (m.line && readLn() == null) return '';
       return buildPick({ sport: sport(), mk: m.k, sd: E('f_sd').value, ln: readLn(), home: E('f_home').value, away: E('f_away').value });
