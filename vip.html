@@ -63,11 +63,39 @@ input:focus,select:focus{outline:2px solid var(--g2);outline-offset:0}
 .gate{margin-top:40px;padding:50px 24px;border-style:solid}.gate h2{color:var(--ink);font-size:1.6rem;margin:8px 0}.gate>div:first-child{color:var(--g)}
 .top2{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 @media(max-width:700px){.sum{grid-template-columns:1fr 1fr}.sum div:nth-child(3){border:0;padding:0}.cats{grid-template-columns:1fr}.tip{grid-template-columns:4px 1fr}.right{grid-column:2;text-align:left;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.adm{margin:0}.who{display:none}}
+
+html{background:#050b17}
+body{background:transparent;position:relative}
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;background:radial-gradient(1200px 700px at 15% -10%,#12335c 0%,transparent 60%),radial-gradient(900px 600px at 100% 10%,#0f2a52 0%,transparent 55%),linear-gradient(180deg,#071122,#040a15)}
+.bg i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.38;animation:fl 18s ease-in-out infinite}
+.bg i:nth-child(1){width:420px;height:420px;background:#3b8fe0;left:-120px;top:12%}
+.bg i:nth-child(2){width:360px;height:360px;background:#8ecbff;right:-100px;top:45%;animation-delay:-6s;opacity:.22}
+.bg i:nth-child(3){width:320px;height:320px;background:#2a5cc4;left:35%;bottom:-140px;animation-delay:-11s}
+.bg:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(142,203,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(142,203,255,.045) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse at 50% 20%,#000 20%,transparent 75%)}
+@keyframes fl{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(60px,-50px) scale(1.15)}}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes sh{to{background-position:200% 0}}
+.bar{background:rgba(5,11,23,.7)}
+.back{font-size:.85rem;font-weight:600;color:var(--g);padding:8px 14px;border:1px solid var(--line);border-radius:99px;transition:.2s}.back:hover{background:#12294a;border-color:#2b4c7a}
+.brand i{background:linear-gradient(110deg,#8ecbff 30%,#fff 50%,#8ecbff 70%);background-size:200% 100%;animation:sh 3.5s linear infinite}
+.hero h1{background:linear-gradient(90deg,#fff,#a9d8ff 60%,#6fb6f2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero,.sum,.cat,.top2,.tabs.sub,.form{animation:up .6s cubic-bezier(.2,.7,.2,1) both}
+.sum{animation-delay:.08s;box-shadow:0 20px 60px -20px rgba(59,143,224,.45)}
+.cat:nth-child(1){animation-delay:.14s}.cat:nth-child(2){animation-delay:.2s}.cat:nth-child(3){animation-delay:.26s}
+.top2{animation-delay:.3s}.tabs.sub{animation-delay:.34s}
+.tip{animation:up .5s cubic-bezier(.2,.7,.2,1) both;transition:transform .25s,border-color .25s,box-shadow .25s;background:rgba(15,26,45,.78);backdrop-filter:blur(6px)}
+.tip:hover{transform:translateY(-3px);border-color:#2f5688;box-shadow:0 14px 40px -18px rgba(90,169,230,.6)}
+.cat{background:rgba(15,26,45,.78);transition:transform .25s,border-color .25s}.cat:hover{transform:translateY(-3px);border-color:#2f5688}
+.tab,.btn{transition:.2s}.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}.tab:hover{border-color:#2f5688}
+.tip.pend .pill{animation:pu 2.2s ease-in-out infinite}
+@keyframes pu{50%{box-shadow:0 0 0 5px rgba(142,203,255,.12)}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="bar"><div><a class="brand" href="/vip">Viking<span style="color:var(--g)">GOLD</span><i>VIP</i></a><span class="sp"></span><span class="who" id="who"></span></div>
-<nav class="nav"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a class="on" href="/vip">★ VIP</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/elerhetosegek">Elérhetőségek</a><a href="/beallitasok">Beállítások</a></nav></div>
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="bar"><div><a class="brand" href="/vip">Viking<span style="color:var(--g)">GOLD</span><i>VIP</i></a><span class="sp"></span><span class="who" id="who"></span><a class="back" href="/">← Főoldal</a></div>
+</div>
 <main class="wrap" id="app"><div class="empty">Betöltés…</div></main>
 <script type="module">
 import { firebaseConfig } from '/js/firebase-config.js';
@@ -112,7 +140,8 @@ function draw(me) {
   <div class="top2"><div class="tabs" style="margin:0"><button class="tab ${cat === 'all' ? 'on' : ''}" data-c="all">Mind</button>${CATS.map(([k, n, i]) => `<button class="tab ${cat === k ? 'on' : ''}" data-c="${k}">${i} ${n}</button>`).join('')}</div>${isAdmin ? '<button class="btn" id="add">+ Új VIP tipp</button>' : ''}</div>
   <div class="tabs sub">${[['all', 'Összes nap'], ['today', 'Ma'], ['yest', 'Tegnap']].map(([k, n]) => `<button class="tab ${day === k ? 'on' : ''}" data-d="${k}">${n}</button>`).join('')}</div>
   ${isAdmin ? formHtml() : ''}
-  <div id="list">${list.length ? list.map(card).join('') : '<div class="empty">Nincs megjeleníthető tipp ebben a szűrésben.</div>'}</div>`;
+  <div id="list">${list.length ? list.map((t, n) => card(t).replace('class="tip ', `style="animation-delay:${Math.min(n, 12) * 50 + 380}ms" class="tip `)).join('') : '<div class="empty">Nincs megjeleníthető tipp ebben a szűrésben.</div>'}</div>`;
+  if (!window._seen) { window._seen = 1; app.querySelectorAll('.sum b').forEach(el => { const m = el.textContent.match(/^([+-]?)(\d+(?:\.\d+)?)(%?)$/); if (!m) return; const to = parseFloat(m[2]), dec = m[2].includes('.') ? 2 : 0, t0 = performance.now(); const f = now => { const k = Math.min((now - t0) / 900, 1), v = to * (1 - Math.pow(1 - k, 3)); el.textContent = m[1] + v.toFixed(dec) + m[3]; if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); }); }
   app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cat = b.dataset.c; draw(me); });
   app.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { day = b.dataset.d; draw(me); });
   if (!isAdmin) return;
