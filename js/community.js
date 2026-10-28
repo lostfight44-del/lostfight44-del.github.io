@@ -229,7 +229,7 @@ export function chatPage(c) {
     return `<div class="dc-m ${group ? 'grp' : ''} ${mine ? 'mine' : ''} ${ment ? 'ment' : ''} ${m.pin ? 'pinned' : ''}" data-id="${m.id}" data-uid="${esc(m.uid)}" data-name="${esc(m.name)}">
       ${group ? `<span class="dc-gt">${hhmm(m.t)}</span>` : av(m.name, adm, m.uid)}
       <div class="dc-b">
-        ${group ? '' : `<div class="dc-hd"><b class="nm ${adm ? 'adm' : ''}">${esc(m.name)}</b>${adm ? '<i class="bdg">ADMIN</i>' : ''}<time>${hhmm(m.t)}</time>${m.pin ? '<span class="pn">📌</span>' : ''}</div>`}
+        ${group ? '' : `<div class="dc-hd"><b class="nm ${adm ? 'adm' : (uMap[m.uid] && uMap[m.uid].vip) ? 'vip' : ''}">${esc(m.name)}</b>${!adm && uMap[m.uid] && uMap[m.uid].vip ? '<i class="bdg vipb">★ VIP</i>' : ''}${adm ? '<i class="bdg">ADMIN</i>' : ''}<time>${hhmm(m.t)}</time>${m.pin ? '<span class="pn">📌</span>' : ''}</div>`}
         ${m.rp ? `<div class="dc-rq" data-a="goto" data-id="${esc(m.rp.id)}">↪ <b>${esc(m.rp.name)}</b> ${esc(m.rp.text)}</div>` : ''}
         ${body}${rxs ? `<div class="dc-rx">${rxs}</div>` : ''}
       </div>
@@ -358,7 +358,7 @@ export function chatPage(c) {
     list.forEach(u => (isAdm(u.id, u.name) ? A : online(u) ? O : F).push(u));
     const s = (a, b) => String(a.name).localeCompare(String(b.name));
     const item = u => { const adm = isAdm(u.id, u.name), on = online(u), mu = mutes[u.id] && mutes[u.id] > now;
-      return `<div class="mb ${on || adm && on ? '' : 'off'}"><div class="avw">${av(u.name || '?', adm, u.id)}<i class="st ${on ? 'on' : ''}"></i></div><span class="${adm ? 'adm' : ''}">${esc(u.name || '?')}</span>${mu ? '<em title="Némítva">🔇</em>' : ''}${admin && mu ? `<button class="mbx" data-um="${u.id}" title="Némítás feloldása">feloldás</button>` : ''}${admin && !mu && u.id !== me.uid && !adm ? `<button class="mbx" data-mt="${u.id}" data-n="${esc(u.name || '?')}" title="Némítás">🔇</button>` : ''}</div>`; };
+      return `<div class="mb ${on || adm && on ? '' : 'off'}"><div class="avw">${av(u.name || '?', adm, u.id)}<i class="st ${on ? 'on' : ''}"></i></div><span class="${adm ? 'adm' : u.vip ? 'vip' : ''}">${esc(u.name || '?')}${u.vip && !adm ? ' ★' : ''}</span>${mu ? '<em title="Némítva">🔇</em>' : ''}${admin && mu ? `<button class="mbx" data-um="${u.id}" title="Némítás feloldása">feloldás</button>` : ''}${admin && !mu && u.id !== me.uid && !adm ? `<button class="mbx" data-mt="${u.id}" data-n="${esc(u.name || '?')}" title="Némítás">🔇</button>` : ''}</div>`; };
     const grp = (t, a) => a.length ? `<div class="mg">${t} — ${a.length}</div>${a.sort(s).map(item).join('')}` : '';
     const adminsOn = A.filter(online), adminsOff = A.filter(u => !online(u));
     $('#mem').innerHTML = grp('Adminok', [...adminsOn.sort(s), ...adminsOff.sort(s)]) + grp('Online', O) + grp('Offline', F.slice(0, 200));
