@@ -273,10 +273,10 @@ function homePage() {
   if (bn) bn.innerHTML = user ? '<a class="btn" href="/tippek">Tippek</a>' : '<div class="row"><a class="btn" href="/auth?mode=register">Regisztráció</a><a class="btn ghost" href="/auth?mode=login">Belépés</a></div>';
   const renderPl = list => {
     if (!list) { $('#plist').innerHTML = '<span class="small">A lista nem tölthető be.</span>'; return; }
-    list = list.filter(u => !u.disabled).sort((a, b) => (isAdminName(b.name) - isAdminName(a.name)) || (a.created || 0) - (b.created || 0) || String(a.name).localeCompare(String(b.name)));
+    list = list.filter(u => !u.disabled).sort((a, b) => (isAdminName(b.name) - isAdminName(a.name)) || (!!b.vip - !!a.vip) || (a.created || 0) - (b.created || 0) || String(a.name).localeCompare(String(b.name)));
     $('#stPlayers').textContent = list.length;
     $('#plCount').textContent = '(' + list.length + ')';
-    $('#plist').innerHTML = list.length ? list.map(u => `<span class="chip ${isAdminName(u.name) ? 'adm' : ''}">${picOf(u) ? `<img src="${picOf(u)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;margin:-2px 2px -2px -6px">` : ''}${esc(u.name || '?')}${isAdminName(u.name) ? ' <i>Admin · Tippadó</i>' : ''}</span>`).join('') : '<span class="small">Még nincs regisztrált játékos.</span>';
+    $('#plist').innerHTML = list.length ? list.map(u => `<span class="chip ${isAdminName(u.name) ? 'adm' : u.vip ? 'vipc' : ''}">${picOf(u) ? `<img src="${picOf(u)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;margin:-2px 2px -2px -6px">` : ''}${esc(u.name || '?')}${isAdminName(u.name) ? ' <i>Admin · Tippadó</i>' : u.vip ? ' <i>★ VIP</i>' : ''}</span>`).join('') : '<span class="small">Még nincs regisztrált játékos.</span>';
   };
   let lastUsers = null;
   onSnapshot(collection(db, 'admins'), sn => { ADMIN_SET = new Set([...RESERVED, ...sn.docs.map(d => String(d.data().name || '').toLowerCase())]); $('#stTipsters').textContent = Math.max(sn.size, 1); if (lastUsers) renderPl(lastUsers); }, () => { $('#stTipsters').textContent = ADMIN_NAMES.length; });
@@ -651,6 +651,26 @@ function tippekPage() {
   }, x => { $('#tlist').innerHTML = `<div class="flash err">A tippek betöltése nem sikerült: ${esc(x.code || x.message)}</div>`; });
 }
 
+/* ---------- elérhetőségek: privát üzenetek ---------- */
+function dmCss() {
+  if (document.getElementById('dm-css')) return;
+  const s = document.createElement('style'); s.id = 'dm-css';
+  s.textContent = `.dm-msgs{display:flex;flex-direction:column;gap:8px;max-height:380px;overflow:auto;padding:4px 2px;margin-bottom:12px}
+.dm-b{max-width:85%;padding:9px 13px;border-radius:14px;background:rgba(148,163,184,.14);align-self:flex-start;white-space:pre-wrap;word-break:break-word;line-height:1.4}
+.dm-b.me{align-self:flex-end;background:rgba(168,85,247,.28)}.dm-b small{display:block;margin-top:4px;font-size:.7rem;opacity:.65}
+.dm-wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px}.dm-list{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto}
+.dm-u{text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:rgba(255,255,255,.03);color:var(--tx);cursor:pointer;font:inherit}
+.dm-u.on{border-color:#a855f7;background:rgba(168,85,247,.14)}.dm-u b{display:block}.dm-u small{display:block;color:var(--mu);font-size:.78rem;margin-top:2px}
+.dm-new{display:inline-block;margin-top:3px;padding:1px 8px;border-radius:99px;font-size:.66rem;font-weight:800;background:rgba(255,84,104,.2);color:#ff8f9d}
+@media(max-width:760px){.dm-wrap{grid-template-columns:1fr}.dm-list{max-height:200px}}`;
+  document.head.appendChild(s);
+}
+function dmDraw(el, l, me, empty) {
+  if (!el) return;
+  el.innerHTML = l.length ? l.map(m => `<div class="dm-b ${m.from === me ? 'me' : ''}">${esc(m.msg)}<small>${m.from === 'admin' ? esc(m.by || 'Admin') + ' (admin)' : esc(m.by || m.name || '')} · ${new Date(m.time).toLocaleString('hu-HU', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></div>`).join('') : `<p class="small" style="margin:0">${empty}</p>`;
+  el.scrollTop = el.scrollHeight;
+}
+
 /* ---------- elérhetőségek ---------- */
 function contactPage() {
   const box = $('#cform');
@@ -658,24 +678,47 @@ function contactPage() {
     box.innerHTML = `<p class="small" style="font-size:.95rem">Üzenetet csak regisztrált, belépett tag küldhet. A neved automatikusan a regisztrált felhasználóneved lesz.</p><div class="row"><a class="btn" href="/auth?mode=login&next=/elerhetosegek">Belépés</a><a class="btn ghost" href="/auth?mode=register&next=/elerhetosegek">Regisztráció</a></div>`;
   } else if (gate()) {
     box.innerHTML = '<p class="small" style="font-size:.95rem">Üzenetet csak megerősített e-mail címmel rendelkező, engedélyezett tag küldhet. Nyisd meg a <a href="/tippek">Tippek</a> oldalt a megerősítéshez.</p>';
-  } else {
+  } else if (!isAdmin()) {
     const name = (profile && profile.name) || user.displayName || user.email.split('@')[0];
-    box.innerHTML = `<form id="cf"><div style="position:absolute;left:-9999px" aria-hidden="true"><input id="c_hp" tabindex="-1" autocomplete="off"></div>
-    <label>Neved <span class="opt">(a regisztrált neved)</span></label><input id="c_name" value="${esc(name)}" readonly>
-    <label>E-mail <span class="opt">(ha választ vársz)</span></label><input id="c_mail" type="email" maxlength="100" value="${esc(user.email || '')}">
-    <label>Üzenet</label><textarea id="c_msg" required maxlength="2000"></textarea>
-    <div style="margin-top:16px"><button class="btn" type="submit">Küldés</button></div></form>`;
+    dmCss();
+    box.innerHTML = `<p class="small" style="margin:0 0 12px">Írj nekünk privát üzenetet – a választ itt, az oldalon belül kapod meg, e-mail nélkül. Nézz vissza ide később.</p>
+    <div class="dm-msgs" id="dmMsgs"><p class="small">Betöltés…</p></div>
+    <form id="cf"><textarea id="c_msg" required maxlength="2000" placeholder="Írd ide az üzeneted…"></textarea><div style="margin-top:12px"><button class="btn" type="submit">Küldés</button></div></form>`;
+    onSnapshot(query(collection(db, 'dm'), where('uid', '==', user.uid), limit(300)), sn => dmDraw($('#dmMsgs'), sn.docs.map(d => d.data()).sort((x, y) => x.time - y.time), 'user', 'Még nem írtál nekünk. Küldd el az első üzeneted!'),
+      x => { $('#dmMsgs').innerHTML = `<p class="small">Az üzenetek nem tölthetők be: ${esc(x.code || x.message)}</p>`; });
     $('#cf').onsubmit = async e => {
       e.preventDefault();
-      if ($('#c_hp').value) return;
-      const last = +localStorage.getItem('vg_lastmsg') || 0; if (Date.now() - last < 30000) { toast('Várj egy kicsit két üzenet között.', 'err'); return; }
-      const email = $('#c_mail').value.trim(), msg = $('#c_msg').value.trim();
-      if (msg.length < 5) { toast('Írj egy rövid üzenetet.', 'err'); return; }
-      (e.submitter || e.target.querySelector('[type=submit]')).disabled = true;
-      try { await addDoc(collection(db, 'messages'), { name, uid: user.uid, email: email.slice(0, 100), msg: msg.slice(0, 2000), time: Date.now() }); localStorage.setItem('vg_lastmsg', Date.now()); $('#c_msg').value = ''; toast('Köszönjük, az üzeneted megérkezett!'); }
+      const last = +localStorage.getItem('vg_lastmsg') || 0; if (Date.now() - last < 3000) { toast('Várj egy kicsit két üzenet között.', 'err'); return; }
+      const msg = $('#c_msg').value.trim(); if (!msg) return;
+      const btn = e.submitter || e.target.querySelector('[type=submit]'); btn.disabled = true;
+      try { await addDoc(collection(db, 'dm'), { uid: user.uid, name, from: 'user', by: name, msg: msg.slice(0, 2000), time: Date.now() }); localStorage.setItem('vg_lastmsg', Date.now()); $('#c_msg').value = ''; }
       catch (x) { toast('Az üzenet küldése nem sikerült: ' + (x.code || x.message), 'err'); }
-      (e.submitter || e.target.querySelector('[type=submit]')).disabled = false;
+      btn.disabled = false;
     };
+  } else {
+    dmCss();
+    $('#cbox').querySelector('h2').textContent = 'Privát üzenetek (admin)';
+    box.innerHTML = `<div class="dm-wrap"><div class="dm-list" id="dmList"><p class="small">Betöltés…</p></div><div class="dm-th"><div id="dmHead" class="small">Válassz egy beszélgetést.</div><div class="dm-msgs" id="dmMsgs"></div>
+      <form id="cf" hidden><textarea id="c_msg" required maxlength="2000" placeholder="Válasz írása…"></textarea><div class="row" style="margin-top:12px"><button class="btn" type="submit">Válasz küldése</button><button class="btn ghost" type="button" id="dmDel">Beszélgetés törlése</button></div></form></div></div>`;
+    let all = [], sel = null;
+    const draw = () => {
+      const g = {}; all.forEach(m => { (g[m.uid] = g[m.uid] || []).push(m); });
+      const th = Object.entries(g).map(([uid, l]) => { l.sort((x, y) => x.time - y.time); const lastM = l[l.length - 1], nm = (l.find(m => m.from === 'user') || lastM).name; return { uid, l, nm, last: lastM, wait: lastM.from === 'user' }; }).sort((x, y) => y.last.time - x.last.time);
+      $('#dmList').innerHTML = th.length ? th.map(t => `<button type="button" class="dm-u ${t.uid === sel ? 'on' : ''}" data-u="${esc(t.uid)}"><b>${esc(t.nm || '?')}</b>${t.wait ? '<span class="dm-new">válaszra vár</span>' : ''}<small>${esc(t.last.msg.slice(0, 48))}</small></button>`).join('') : '<p class="small" style="margin:0">Még nincs privát üzenet.</p>';
+      $('#dmList').querySelectorAll('[data-u]').forEach(b => b.onclick = () => { sel = b.dataset.u; draw(); $('#cf').querySelector('textarea').focus(); });
+      const cur = th.find(t => t.uid === sel);
+      $('#cf').hidden = !cur;
+      $('#dmHead').innerHTML = cur ? `<b style="color:var(--tx)">${esc(cur.nm)}</b> beszélgetése` : 'Válassz egy beszélgetést.';
+      dmDraw($('#dmMsgs'), cur ? cur.l : [], 'admin', '');
+    };
+    onSnapshot(query(collection(db, 'dm'), orderBy('time', 'desc'), limit(1000)), sn => { all = sn.docs.map(d => ({ id: d.id, ...d.data() })); draw(); }, x => { $('#dmList').textContent = 'Nem tölthető be: ' + (x.code || x.message); });
+    $('#cf').onsubmit = async e => {
+      e.preventDefault(); const msg = $('#c_msg').value.trim(); if (!msg || !sel) return;
+      const t = all.find(m => m.uid === sel), nm = (all.find(m => m.uid === sel && m.from === 'user') || t || {}).name || '';
+      try { await addDoc(collection(db, 'dm'), { uid: sel, name: nm, from: 'admin', by: (profile && profile.name) || 'Admin', msg: msg.slice(0, 2000), time: Date.now() }); $('#c_msg').value = ''; }
+      catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
+    };
+    $('#dmDel').onclick = async () => { if (!sel || !confirm('Törlöd az egész beszélgetést?')) return; const ids = all.filter(m => m.uid === sel).map(m => m.id); sel = null; for (const id of ids) { try { await deleteDoc(doc(db, 'dm', id)); } catch (x) { } } };
   }
   if (isAdmin()) {
     const bx = $('#adminmsgs'); bx.hidden = false;
