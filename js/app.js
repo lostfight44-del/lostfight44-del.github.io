@@ -41,8 +41,8 @@ function toast(msg, type = 'ok') {
 const flashNext = (m, t = 'ok') => sessionStorage.setItem('vg_flash', JSON.stringify([m, t]));
 function showStoredFlash() { try { const f = JSON.parse(sessionStorage.getItem('vg_flash') || 'null'); if (f) { sessionStorage.removeItem('vg_flash'); toast(f[0], f[1]); } } catch (e) { } }
 
-/* Discord összekötés: a Discord Developer Portalon létrehozott alkalmazás Client ID-ja (OAuth2 → Client information) */
-const DISCORD_CLIENT_ID = '';
+/* Jelenlét (online jelző): ritka írás, hogy a Firebase ingyenes keretében maradjunk */
+const BEAT_MS = 5 * 60e3, ONLINE_MS = 11 * 60e3;
 
 const picOf = p => (p && typeof p.avatar === 'string' && p.avatar.startsWith('data:image/')) ? p.avatar : '';
 
@@ -183,14 +183,14 @@ function statCss() {
   st.textContent = `
 #statBox{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:0 0 14px;text-align:left}
 .vgs{position:relative;overflow:hidden;min-width:0;padding:24px 24px 18px;border-radius:20px;border:1px solid rgba(148,163,184,.16);background:linear-gradient(180deg,rgba(17,24,39,.88),rgba(10,14,24,.94));box-shadow:0 24px 60px -30px #000;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.vgs::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,#f6c453,transparent)}
+.vgs::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,#a855f7,transparent)}
 .vgs-x{grid-column:1/-1;text-align:center;padding:30px 20px}.vgs-x .big{font-size:2rem}.vgs-x p{margin:8px 0 0;color:#94a3b8}
 .vgs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px}
-.vgs-h span{font-weight:800;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;color:#ffe29a}
+.vgs-h span{font-weight:800;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;color:#d9b8ff}
 .vgs-h small{font-size:.8rem;color:#94a3b8;font-weight:600}
 .vgs-main{display:flex;align-items:flex-end;gap:16px;margin:16px 0 14px}
-.vgs-pct{font-size:3.6rem;line-height:.9;font-weight:800;letter-spacing:-.04em;color:#ffe29a;font-variant-numeric:tabular-nums}
-.vgs-pct i{font-style:normal;font-size:1.7rem;margin-left:2px;color:#f6c453}
+.vgs-pct{font-size:3.6rem;line-height:.9;font-weight:800;letter-spacing:-.04em;color:#d9b8ff;font-variant-numeric:tabular-nums}
+.vgs-pct i{font-style:normal;font-size:1.7rem;margin-left:2px;color:#a855f7}
 .vgs-lab{padding-bottom:3px;display:flex;flex-direction:column;gap:2px}
 .vgs-lab b{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:#e2e8f0}
 .vgs-lab span{font-size:.82rem;color:#94a3b8}
@@ -203,7 +203,7 @@ function statCss() {
 .vgs-c.w{border-color:rgba(45,212,160,.4);background:rgba(45,212,160,.07)}.vgs-c.w b{color:#2dd4a0}
 .vgs-c.l{border-color:rgba(251,90,110,.4);background:rgba(251,90,110,.07)}.vgs-c.l b{color:#fb5a6e}
 .vgs-cmp{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:14px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.03);font-size:.86rem;color:#94a3b8}
-.vgs-cmp b{color:#ffe29a;font-size:1rem}.vgs-cmp em{font-style:normal;color:#94a3b8}
+.vgs-cmp b{color:#d9b8ff;font-size:1rem}.vgs-cmp em{font-style:normal;color:#94a3b8}
 .vgs-cmp i{font-style:normal;font-weight:800;margin-left:auto}.vgs-cmp i.up{color:#2dd4a0}.vgs-cmp i.dn{color:#fb5a6e}.vgs-cmp i.eq{color:#94a3b8}
 .vgs-tot{margin:10px 2px 0;font-size:.78rem;color:#64748b}
 .vgs-sp{margin-top:14px;padding-top:6px;border-top:1px solid rgba(148,163,184,.14)}
@@ -212,7 +212,7 @@ function statCss() {
 .vgs-r .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vgs-r .m{height:5px;border-radius:5px;background:rgba(148,163,184,.16);overflow:hidden}.vgs-r .m u{display:block;height:100%;background:#2dd4a0;border-radius:5px}
 .vgs-r .s{text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;white-space:nowrap}
-.vgs-r b{text-align:right;color:#ffe29a;font-variant-numeric:tabular-nums}
+.vgs-r b{text-align:right;color:#d9b8ff;font-variant-numeric:tabular-nums}
 @media(max-width:760px){#statBox{grid-template-columns:minmax(0,1fr)}.vgs{padding:20px 18px 14px}.vgs-pct{font-size:3rem}}`;
   document.head.appendChild(st);
 }
@@ -697,13 +697,10 @@ function settingsPage() {
   root.innerHTML = `<section class="wrap" style="padding-top:26px"><h1>Beállítások</h1>
   <div class="card" id="picCard"><h2>Profilkép</h2>
     <div class="row" style="gap:18px;align-items:center">
-      <div id="picPrev" style="flex:none;width:96px;height:96px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:800;font-size:2.2rem;color:#1a1204;background:linear-gradient(135deg,#ffe29a,#d99a1c);border:2px solid rgba(246,196,83,.5)"></div>
+      <div id="picPrev" style="flex:none;width:96px;height:96px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:800;font-size:2.2rem;color:#ffffff;background:linear-gradient(135deg,#d9b8ff,#7c3aed);border:2px solid rgba(168,85,247,.5)"></div>
       <div style="flex:1;min-width:220px"><p class="small" style="margin:0 0 10px">Ezt a képet látja mindenki a chatben, a tagok listáján és a kezdőlapon. Bármilyen képet választhatsz, a közepét négyzetre vágjuk és lekicsinyítjük.</p>
       <div class="row"><label class="btn sm ghost" for="picFile" style="margin:0;cursor:pointer">Kép kiválasztása</label><input id="picFile" type="file" accept="image/*" hidden>
       <button class="btn sm" id="picSave" type="button" disabled>Mentés</button><button class="btn sm danger" id="picDel" type="button">Eltávolítás</button></div></div></div></div>
-  <div class="card" id="dcCard"><h2>Discord</h2>
-    <p class="small" style="margin:0 0 12px">Kösd össze a Discord-fiókodat: a neved megjelenik a profilodon, és az adminok látják, melyik Discord-fiók a tiéd. Csak a Discord-neved és a profilképed azonosítóját kérjük el, a jelszavadhoz és az üzeneteidhez nem férünk hozzá.</p>
-    <div id="dcBox"></div></div>
   <div class="g2" style="align-items:start">
     <div class="card"><h2>Fiók</h2>
       <p style="margin:0 0 4px"><span class="small">E-mail</span><br><b>${esc(user.email)}</b> ${user.emailVerified || admin ? '<span class="pill g">megerősítve</span>' : '<span class="pill y">nincs megerősítve</span>'}</p>
@@ -756,48 +753,6 @@ function settingsPage() {
     try { await updateDoc(doc(db, 'users', user.uid), { avatar: '' }); flashNext('A profilképed eltávolítva.'); location.reload(); }
     catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
   };
-
-  /* Discord összekötés (OAuth2 implicit, csak 'identify') */
-  const dcDraw = () => {
-    const d = profile.discord, box = $('#dcBox');
-    if (d && d.id) {
-      const img = d.avatar ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(d.id)}/${encodeURIComponent(d.avatar)}.png?size=64` : '';
-      box.innerHTML = `<div class="row" style="gap:12px;align-items:center">${img ? `<img src="${img}" alt="" style="width:48px;height:48px;border-radius:50%">` : ''}<div style="flex:1;min-width:140px"><b>${esc(d.name || 'Discord-fiók')}</b><br><span class="pill g">összekötve</span></div><button class="btn sm danger" id="dcOff" type="button">Leválasztás</button></div>`;
-      $('#dcOff').onclick = async () => {
-        if (!confirm('Leválasztod a Discord-fiókodat?')) return;
-        try { await updateDoc(doc(db, 'users', user.uid), { discord: null }); profile.discord = null; dcDraw(); toast('A Discord-fiók leválasztva.'); }
-        catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
-      };
-    } else {
-      box.innerHTML = '<button class="btn sm" id="dcOn" type="button">Összekötés Discorddal</button>';
-      $('#dcOn').onclick = () => {
-        if (!DISCORD_CLIENT_ID) { toast('A Discord összekötés még nincs beállítva.', 'err'); return; }
-        const st = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
-        sessionStorage.setItem('vg_dc_state', st);
-        location.href = 'https://discord.com/oauth2/authorize?' + new URLSearchParams({ client_id: DISCORD_CLIENT_ID, response_type: 'token', scope: 'identify', redirect_uri: location.origin + '/beallitasok', state: st });
-      };
-    }
-  };
-  dcDraw();
-  const hp = new URLSearchParams(location.hash.replace(/^#/, ''));
-  if (hp.get('access_token') || hp.get('error')) {
-    history.replaceState(null, '', location.pathname + location.search);
-    const okState = hp.get('state') && hp.get('state') === sessionStorage.getItem('vg_dc_state');
-    sessionStorage.removeItem('vg_dc_state');
-    if (hp.get('access_token') && okState) {
-      (async () => {
-        try {
-          const r = await fetch('https://discord.com/api/v10/users/@me', { headers: { Authorization: 'Bearer ' + hp.get('access_token') } });
-          if (!r.ok) throw new Error('Discord hiba (' + r.status + ')');
-          const j = await r.json();
-          const d = { id: String(j.id), name: String(j.global_name || j.username || '').slice(0, 40), avatar: j.avatar ? String(j.avatar) : '' };
-          await updateDoc(doc(db, 'users', user.uid), { discord: d });
-          profile.discord = d; dcDraw(); toast('A Discord-fiókod összekötve.');
-        } catch (x) { toast('Az összekötés nem sikerült: ' + (x.code || x.message), 'err'); }
-      })();
-    } else if (hp.get('error')) toast('Az összekötést megszakítottad.', 'err');
-    else toast('Az összekötés nem sikerült, próbáld újra.', 'err');
-  }
 
   $('#nameForm').onsubmit = async e => {
     e.preventDefault();
@@ -856,7 +811,7 @@ function settingsPage() {
     $('#mBody').innerHTML = l.length ? l.map(u => {
       const adm = isAdminName(u.name), me = u.id === user.uid;
       const stt = (adm ? '<span class="pill v">Admin</span>' : u.disabled ? '<span class="pill r">Letiltva</span>' : '<span class="pill g">Aktív</span>') + (u.vip ? ' <span class="pill vip">★ VIP</span>' : '');
-      return `<tr class="${u.vip && !adm ? 'vip-row' : ''}"><td><b class="${u.vip ? 'vip-nm' : ''}">${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}${u.discord && u.discord.id ? `<br><span class="small">Discord: ${esc(u.discord.name || u.discord.id)}</span>` : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td><td>${actOf(u)}</td>
+      return `<tr class="${u.vip && !adm ? 'vip-row' : ''}"><td><b class="${u.vip ? 'vip-nm' : ''}">${esc(u.name || '?')}</b>${me ? ' <span class="small">(te)</span>' : ''}</td><td>${esc(mails[u.id] || '–')}</td><td>${u.created ? new Date(u.created).toLocaleDateString('hu-HU') : '–'}</td><td>${stt}</td><td>${actOf(u)}</td>
       <td class="acts"><button class="btn sm ghost" data-rs="${u.id}">Jelszó-mail</button>${adm ? '' : `<button class="btn sm ghost" data-vip="${u.id}">${u.vip ? 'VIP elvétel' : '★ VIP adás'}</button><button class="btn sm ghost" data-nm="${u.id}">Név</button><button class="btn sm ghost" data-dis="${u.id}">${u.disabled ? 'Feloldás' : 'Letiltás'}</button><button class="btn sm danger" data-rm="${u.id}">Törlés</button>`}</td></tr>`;
     }).join('') : '<tr><td colspan="6">Nincs találat.</td></tr>';
     const U = id => users.find(x => x.id === id);
@@ -893,7 +848,7 @@ function settingsPage() {
   };
   $('#mSearch').oninput = e => { filter = e.target.value.trim().toLowerCase(); draw(); };
   onSnapshot(collection(db, 'users'), sn => { users = sn.docs.map(d => ({ id: d.id, ...d.data() })); draw(); }, x => { $('#mBody').innerHTML = `<tr><td colspan="6">Nem tölthető be: ${esc(x.code || x.message)}</td></tr>`; });
-  onSnapshot(collection(db, 'presence'), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); draw(); }, () => { });
+  onSnapshot(query(collection(db, 'presence'), where('t', '>', Date.now() - 7 * 864e5), orderBy('t', 'desc'), limit(300)), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); draw(); }, () => { });
   setInterval(draw, 60000);
   onSnapshot(collection(db, 'userEmails'), sn => { mails = {}; sn.docs.forEach(d => mails[d.id] = d.data().email); draw(); }, () => { });
 }
@@ -961,8 +916,14 @@ async function start(u) {
   else if (page === 'updates' || page === 'chat') loadCommunity();
   if (user && profile && !profile.disabled && (user.emailVerified || isAdmin())) {
     loadNotify();
-    const beat = () => { if (!document.hidden) setDoc(doc(db, 'presence', user.uid), { name: profile.name || '', t: Date.now() }).catch(() => { }); };
-    beat(); setInterval(beat, 60000); document.addEventListener('visibilitychange', beat);
+    const beat = () => {
+      if (document.hidden) return;
+      let last = 0; try { last = +localStorage.getItem('vg_beat') || 0; } catch (e) { }
+      if (Date.now() - last < BEAT_MS - 15e3) return;   // oldalváltásnál / több fülnél se írjunk feleslegesen
+      try { localStorage.setItem('vg_beat', String(Date.now())); } catch (e) { }
+      setDoc(doc(db, 'presence', user.uid), { name: profile.name || '', t: Date.now() }).catch(() => { });
+    };
+    window.vgBeat = beat; beat(); setInterval(beat, BEAT_MS); document.addEventListener('visibilitychange', beat);
   }
   if (page !== 'tippek' && page !== 'settings') showStoredFlash();
 }
