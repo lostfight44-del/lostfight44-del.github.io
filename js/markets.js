@@ -18,6 +18,8 @@ const BASE = {
   stot: { l: 'Összes szett', s: [['o', 'Felett'], ['u', 'Alatt']], line: 'pos' },
   ghcp: { l: 'Gém hendikep', s: [['h', 'Hazai'], ['a', 'Vendég']], line: 'signed' },
   gtot: { l: 'Összes gém', s: [['o', 'Felett'], ['u', 'Alatt']], line: 'pos' },
+  cor: { l: 'Összes szöglet', s: [['o', 'Felett'], ['u', 'Alatt']], line: 'pos' },
+  corw: { l: 'Ki nyer több szögletet', s: [['h', 'Hazai'], ['x', 'Egyenlő'], ['a', 'Vendég']] },
   free: { l: 'Egyéb (saját szöveg)', s: [], free: true }
 };
 const ORDER = {
@@ -33,20 +35,21 @@ const LABEL = {
   tenisz: { ml: 'Mérkőzés győztese' }
 };
 const LINES = {
-  labdarugas: { hcp: range(-3, 3, .5), tot: range(.5, 6.5), tth: range(.5, 3.5), tta: range(.5, 3.5) },
+  labdarugas: { hcp: range(-3, 3, .5), tot: range(.5, 6.5), tth: range(.5, 3.5), tta: range(.5, 3.5), cor: range(6.5, 14.5, 1) },
   jegkorong: { hcp: range(-3.5, 3.5, .5), tot: range(2.5, 9.5), tth: range(.5, 5.5), tta: range(.5, 5.5) },
   kezilabda: { hcp: range(-12.5, 12.5, 1), tot: range(48.5, 66.5), tth: range(22.5, 36.5), tta: range(22.5, 36.5) },
   kosarlabda: { hcp: range(-20.5, 20.5, 1), tot: range(140.5, 240.5, 1), tth: range(60.5, 125.5, 1), tta: range(60.5, 125.5, 1) },
   tenisz: { shcp: [-2.5, -1.5, 1.5, 2.5], stot: [2.5, 3.5, 4.5], ghcp: range(-8.5, 8.5, 1), gtot: range(17.5, 40.5, 1) }
 };
 
-export function mktList(sport) {
-  const o = ORDER[sport] || ORDER.labdarugas;
+export function mktList(sport, extra = false) {
+  const o = [...(ORDER[sport] || ORDER.labdarugas)];
+  if (extra && sport === 'labdarugas') o.splice(o.indexOf('free'), 0, 'cor', 'corw');
   return o.map(k => ({ k, ...BASE[k], l: (LABEL[sport] && LABEL[sport][k]) || BASE[k].l }));
 }
-export const mktDef = (sport, k) => mktList(sport).find(m => m.k === k);
+export const mktDef = (sport, k) => mktList(sport, true).find(m => m.k === k);
 export const lineSuggest = (sport, k) => ((LINES[sport] || {})[k]) || [];
-const unitOf = (sport, k) => k === 'stot' || k === 'shcp' ? 'szett' : k === 'ghcp' || k === 'gtot' ? 'gém' : UNIT[sport] || 'gól';
+const unitOf = (sport, k) => k === 'cor' ? 'szöglet' : k === 'stot' || k === 'shcp' ? 'szett' : k === 'ghcp' || k === 'gtot' ? 'gém' : UNIT[sport] || 'gól';
 const sg = n => (n > 0 ? '+' : n < 0 ? '−' : '') + String(Math.abs(n)).replace('.', ',');
 const ps = n => String(n).replace('.', ',');
 
@@ -62,6 +65,8 @@ export function buildPick({ sport, mk, sd, ln, home, away, free }) {
     case 'tot': case 'stot': case 'gtot': return `Összesen ${ps(ln)} ${u} ${sd === 'o' ? 'felett' : 'alatt'}`;
     case 'tth': return `${h}: ${ps(ln)} ${u} ${sd === 'o' ? 'felett' : 'alatt'}`;
     case 'tta': return `${a}: ${ps(ln)} ${u} ${sd === 'o' ? 'felett' : 'alatt'}`;
+    case 'cor': return `Összesen ${ps(ln)} szöglet ${sd === 'o' ? 'felett' : 'alatt'}`;
+    case 'corw': return sd === 'h' ? `${h}: több szöglet` : sd === 'a' ? `${a}: több szöglet` : 'Egyenlő számú szöglet';
     case 'btts': return `Mindkét csapat szerez gólt: ${sd === 'y' ? 'igen' : 'nem'}`;
     case 'oe': return `Összes ${u === 'gém' ? 'pont' : u}: ${sd === 'odd' ? 'páratlan' : 'páros'}`;
     default: return (free || '').trim();
@@ -126,6 +131,12 @@ export function evalTip(t) {
   if (!t) return null;
   if (!t.mk || !t.sd) { const g = inferTip(t); if (!g) return null; t = { ...t, ...g }; }
   const sport = t.sport || 'jegkorong';
+  if (t.mk === 'cor' || t.mk === 'corw') {   // szöglet: "5-6" (hazai-vendég) vagy csak összesen (pl. 11) a felett/alatt piacnál
+    const c = String(t.corners || '').trim(), pr = c.match(/^(\d+)\s*[-–:]\s*(\d+)$/), one = c.match(/^\d+$/);
+    if (t.mk === 'corw') { if (!pr) return null; const x = +pr[1], y = +pr[2]; return (t.sd === 'h' ? x > y : t.sd === 'a' ? y > x : x === y) ? 'win' : 'loss'; }
+    const tot = pr ? +pr[1] + +pr[2] : one ? +c : null; if (tot == null) return null;
+    return cmp(tot, Number(t.ln), t.sd === 'o');
+  }
   const r = parseResult(sport, t.result); if (!r) return null;
   const ln = Number(t.ln), over = t.sd === 'o';
   const fh = r.h, fa = r.a;
