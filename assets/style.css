@@ -962,3 +962,10 @@ label{color:#8497b4}
 .tbl th{color:#8497b4}.tbl td,.tbl th{border-color:#1c2b45}
 tr.vip-row{background:linear-gradient(90deg,rgba(168,85,247,.20),rgba(168,85,247,.05) 60%,transparent)}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* 5 sportág: asztali nézeten 3 + 2, mobilon 2 + 2 + 1 */
+@media(min-width:701px){
+  .sports{grid-template-columns:repeat(6,1fr)}
+  .sports .sp,.sports .sp:last-child{grid-column:span 2}
+  .sports .sp:nth-child(4),.sports .sp:nth-child(5){grid-column:span 3}
+}
