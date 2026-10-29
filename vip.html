@@ -124,7 +124,7 @@ body{background-image:radial-gradient(900px 500px at 80% -10%,rgba(168,85,247,.2
 import { firebaseConfig } from '/js/firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { LEAGUES } from '/js/leagues.js';
 import { mktList, mktDef, lineSuggest, buildPick, evalTip } from '/js/markets.js';
 
@@ -137,7 +137,7 @@ const LAB = { pend: 'Függőben', win: 'Nyert', loss: 'Vesztett', void: 'Érvén
 const gate = (t, p, x = '') => { app.innerHTML = `<div class="gate"><div style="font-size:2rem">★</div><h2>${t}</h2><p>${p}</p>${x}</div>`; };
 
 const auth = getAuth(initializeApp(firebaseConfig)), db = getFirestore(auth.app);
-let isAdmin = false, tips = [], cat = 'all', day = 'all', ME = '', pend = false;
+let isAdmin = false, TPS = [], tips = [], cat = 'all', day = 'all', ME = '', pend = false;
 setPersistence(auth, browserSessionPersistence).catch(() => { }).finally(() => onAuthStateChanged(auth, init));
 
 async function init(u) {
@@ -146,6 +146,7 @@ async function init(u) {
   $('#who').textContent = (p && p.name) || u.email;
   if (!isAdmin && !(p && p.vip && !p.disabled)) return gate('Ez a rész VIP tagoknak szól', 'Kérd meg valamelyik admint, hogy adjon VIP rangot a fiókodnak.', '<p style="margin-top:18px"><a class="btn ghost" href="/elerhetosegek">Elérhetőségek</a></p>');
   ME = (p && p.name) || u.email.split('@')[0];
+  if (isAdmin) try { TPS = (await getDocs(collection(db, 'admins'))).docs.map(d => d.data().name).filter(Boolean); } catch (e) { }
   onSnapshot(collection(db, 'users'), sn => { const n = sn.docs.filter(d => { const x = d.data(); return x.vip && !x.disabled; }).length, el = $('#vipc'); el.innerHTML = '· <b>' + n + '</b> vip tag'; el.hidden = false; }, () => { });
   onSnapshot(query(collection(db, 'vipTips'), orderBy('date', 'desc'), limit(500)), s => {
     tips = s.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => VIPK.includes(t.sport));
@@ -225,7 +226,7 @@ function card(t) {
   const inp = (f, val, ph, lab) => `<input class="rb" data-id="${t.id}" data-f="${f}" value="${esc(val || '')}" placeholder="${ph}" maxlength="30" aria-label="${lab}">`;
   const ro = (val, lab) => val ? `<span class="rbro">${lab}: <b>${esc(val)}</b></span>` : '';
   return `<div class="tip ${s}"><div class="st"></div><div><div class="meta">${c[2]} ${c[1].toUpperCase()}${t.league ? ' · ' + esc(t.league) : ''} · ${esc(t.date)}${t.time ? ' ' + esc(t.time) : ''}</div>
-  <div class="match">${esc(t.home)}${t.away ? ' – ' + esc(t.away) : ''}</div><div class="pick">Tipp: <b>${esc(t.pick)}</b></div>${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
+  <div class="match">${esc(t.home)}${t.away ? ' – ' + esc(t.away) : ''}</div><div class="pick">Tipp: <b>${esc(t.pick)}</b> · Tippadó: <b>${esc(t.tipster || 'Admin')}</b></div>${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
   ${isAdmin ? `<div class="resrow">${inp('result', t.result, '3-2', 'Végeredmény')}${t.sport === 'labdarugas' && isCor ? inp('corners', t.corners, '5-6 vagy 11', 'Szögletek (csak a kiértékeléshez)') : ''}</div>` : (t.result ? `<div class="resrow">${ro(t.result, 'Végeredmény')}</div>` : '')}</div>
   <div class="right">${t.odds ? `<div class="odd">${(+t.odds).toFixed(2)}</div>` : ''}<span class="pill ${s}">${LAB[s]}</span>
   ${isAdmin ? `<div class="adm"><button class="btn sm ghost" data-st="${t.id}" data-cur="${s}">Állapot ›</button><button class="btn sm ghost" data-ed="${t.id}">Szerk.</button><button class="btn sm ghost del" data-rm="${t.id}">✕</button></div>` : ''}</div></div>`;
@@ -249,6 +250,7 @@ function openForm(t) {
     <div class="fg"><div><label>Odds <span class="opt">(opc.)</span></label><input id="f_odds" type="number" step="0.01" min="1" value="${v('odds')}"></div>
     <div><label>Végeredmény <span class="opt">(opc.)</span></label><input id="f_result" maxlength="30" placeholder="3-2" value="${v('result')}"></div>
     <div id="f_cobox" hidden><label>Szögletek <span class="opt">(hazai-vendég, pl. 5-6)</span></label><input id="f_corners" maxlength="20" placeholder="5-6 vagy összesen 11" value="${v('corners')}"></div>
+    <div><label>Tippadó</label><select id="f_tipster">${[...new Set([...(f.tipster ? [f.tipster] : []), ME, ...TPS])].map(n => `<option ${(f.tipster || ME) === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
     <div><label>Állapot</label><select id="f_status">${Object.entries(LAB).map(([k, n]) => `<option value="${k}" ${(f.status || 'pend') === k ? 'selected' : ''}>${k === 'pend' ? 'Automatikus (az eredményből)' : n + ' (kézi)'}</option>`).join('')}</select></div></div>
     <div style="margin-bottom:12px"><label>Megjegyzés <span class="opt">(opc.)</span></label><input id="f_note" maxlength="200" value="${v('note')}"></div>
     <p class="hint">Ha megadod a végeredményt (és szögletes tippnél a szögleteket), a nyert / vesztett / érvénytelen állapotot a rendszer magától kiszámolja. Később a tipp kártyáján is beírhatod az eredményt. Jégkorongnál hosszabbítás / szétlövés: 4-3 ot vagy 3-2 so. Tenisznél szettek: 2-1 vagy 6-4 3-6 7-5.</p>
@@ -321,7 +323,7 @@ function openForm(t) {
     if (m.line && ln == null) return alert('Add meg a vonalat (pl. 2.5 vagy -1.5).');
     if (!pick) return alert('Add meg a fő tippet.');
     const lgSel = E('f_league').value.trim(), odds = parseFloat(g('f_odds').replace(',', '.'));
-    const row = { sport: sport(), date: E('f_date').value, time: g('f_time'), league: lgSel, home: g('f_h'), away: g('f_a'), mk: m.free ? '' : m.k, sd: m.free ? '' : E('f_sd').value, ln: m.line ? ln : null, pick, odds: odds > 1 ? Math.round(odds * 100) / 100 : 0, note: g('f_note'), result: g('f_result'), corners: g('f_corners'), status: E('f_status').value };
+    const row = { sport: sport(), date: E('f_date').value, time: g('f_time'), league: lgSel, home: g('f_h'), away: g('f_a'), mk: m.free ? '' : m.k, sd: m.free ? '' : E('f_sd').value, ln: m.line ? ln : null, pick, odds: odds > 1 ? Math.round(odds * 100) / 100 : 0, note: g('f_note'), result: g('f_result'), corners: g('f_corners'), tipster: g('f_tipster'), status: E('f_status').value };
     if (row.result || row.corners) { const r = evalTip(row); if (r) row.status = r; }
     $('#save').disabled = true;
     try {
