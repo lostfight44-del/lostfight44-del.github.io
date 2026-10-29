@@ -123,6 +123,27 @@ function summary(l) {
 }
 /* bejött | összes (az érvénytelen tippek nem számítanak bele) */
 const cnt = l => { let w = 0, n = 0, p = 0; l.forEach(t => { const s = effStatus(t); if (s === 'void') return; n++; if (s === 'win') w++; else if (s === 'pend') p++; }); return { w, n, p }; };
+/* vonaldiagram (mint a VIP-ben): napról napra összesített eltalált / nem talált tippek + találati arány */
+function tipChart(list) {
+  const days = {}; list.forEach(t => { const s = effStatus(t); if (s !== 'win' && s !== 'loss') return; (days[t.date] = days[t.date] || { w: 0, x: 0 })[s === 'win' ? 'w' : 'x']++; });
+  const ds = Object.keys(days).sort(), box = h => `<div style="background:rgba(15,26,45,.78);border:1px solid rgba(168,85,247,.35);border-radius:16px;padding:16px 18px;margin:0 0 18px"><h3 style="font-size:1rem;margin:0 0 4px">Eltalált tippek alakulása</h3>${h}</div>`;
+  if (!ds.length) return box('<div style="color:#8497b4;padding:22px 0;text-align:center;font-size:.9rem">Még nincs lezárt tipp – amint lesz eredmény, itt jelenik meg a görbe.</div>');
+  let W = 0, X = 0; const P = ds.map(d => { W += days[d].w; X += days[d].x; return { d, W, X, r: Math.round(W / (W + X) * 100) }; });
+  const w = 640, h = 230, L = 34, R = 36, T = 12, B = 28, mx = Math.max(4, ...P.map(p => Math.max(p.W, p.X)));
+  const nx = i => P.length < 2 ? (L + w - R) / 2 : L + i * (w - L - R) / (P.length - 1), yc = n => h - B - n / mx * (h - B - T), yp = r => h - B - r / 100 * (h - B - T);
+  const path = (f, y) => P.map((p, i) => (i ? 'L' : 'M') + nx(i).toFixed(1) + ' ' + y(f(p)).toFixed(1)).join(' ');
+  const dots = (f, y, c, u) => P.map((p, i) => `<circle cx="${nx(i).toFixed(1)}" cy="${y(f(p)).toFixed(1)}" r="3.6" fill="${c}"><title>${p.d}: ${f(p)}${u}</title></circle>`).join('');
+  const ax = 'fill:#8497b4;font:10px Inter,sans-serif', gy = k => (h - B - k * (h - B - T)).toFixed(1);
+  const grid = [0, .25, .5, .75, 1].map(k => `<line x1="${L}" x2="${w - R}" y1="${gy(k)}" y2="${gy(k)}" stroke="rgba(255,255,255,.07)"/><text style="${ax}" x="${L - 6}" y="${+gy(k) + 3}" text-anchor="end">${Math.round(mx * k)}</text><text style="${ax}" x="${w - R + 6}" y="${+gy(k) + 3}">${k * 100}%</text>`).join('');
+  const step = Math.ceil(P.length / 7), xl = P.map((p, i) => i % step === 0 || i === P.length - 1 ? `<text style="${ax}" x="${nx(i).toFixed(1)}" y="${h - 8}" text-anchor="middle">${p.d.slice(5).replace('-', '.')}.</text>` : '').join('');
+  const lg = (c, t) => `<span><i style="display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px;background:${c}"></i>${t}</span>`;
+  return box(`<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;color:#8497b4;margin:6px 0 4px">${lg('#4ade9a', 'Eltalált (db)')}${lg('#ff7b6b', 'Nem talált (db)')}${lg('#c08bff', 'Találati arány (%) – most <b style="color:#e9d5ff">' + P[P.length - 1].r + '%</b>')}</div>
+  <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;overflow:visible" role="img" aria-label="Eltalált tippek alakulása">${grid}${xl}
+  <path d="${path(p => p.X, yc)}" fill="none" stroke="#ff7b6b" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="${path(p => p.W, yc)}" fill="none" stroke="#4ade9a" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="${path(p => p.r, yp)}" fill="none" stroke="#c08bff" stroke-width="2.4" stroke-dasharray="6 5" stroke-linejoin="round" stroke-linecap="round"/>
+  ${dots(p => p.X, yc, '#ff7b6b', ' nem talált összesen')}${dots(p => p.W, yc, '#4ade9a', ' eltalált összesen')}${dots(p => p.r, yp, '#c08bff', '% találati arány')}</svg>`);
+}
 const scH = c => `<span class="sc" title="${c.w} bejött, ${c.n - c.w - c.p} elbukott, ${c.p} függőben"><b class="sw">${c.w}</b><i>|</i><b>${c.n}</b></span>`;
 const fmtAvg = n => n.toFixed(1).replace('.', ',');
 const watchUsers = cb => onSnapshot(collection(db, 'users'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => cb(null));
@@ -425,6 +446,7 @@ function tippekPage() {
   <div class="row" id="dRow" style="margin:-6px 0 14px" hidden><input id="dpick" type="date" style="max-width:200px" aria-label="Dátum választása"></div>
   <div id="formBox"></div>
   <div class="sbar" id="sbar"></div>
+  <div id="tchart"></div>
   <div class="tlog"><div class="tlh"><span>Tippek és eredmények</span><small id="tlSub"></small></div><div id="rbox"></div><div id="tsum"></div><div id="tlist"><div class="empty">Betöltés…</div></div></div>
   </section>`;
   showStoredFlash();
@@ -493,6 +515,7 @@ function tippekPage() {
     pending = false;
     const l = matches();
     $('#tsum').innerHTML = summary(l);
+    $('#tchart').innerHTML = tipChart(all.filter(t => sportOf(t) === st.s));
     scores();
     if (st.v !== 'all') $('#rbox').innerHTML = rateHtml(curDate(), st.s, l.length > 0, false);
     let lastD = '';
