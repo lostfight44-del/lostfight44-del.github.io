@@ -30,14 +30,14 @@ export function init(c) {
   const st = document.createElement('style');
   st.textContent = `.nbadge{display:inline;margin-left:6px;color:#ff4d63!important;font-weight:800;font-size:.92em;font-style:normal;text-shadow:0 0 10px rgba(255,84,104,.5)}.nav a.on .nbadge{color:#9f1239!important;text-shadow:none}
   .vgt-w{position:fixed;right:16px;bottom:16px;z-index:300;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 32px))}
-  .vgt{display:flex;gap:10px;padding:12px 14px;border-radius:14px;background:#141822;border:1px solid rgba(168,85,247,.4);box-shadow:0 18px 40px -12px #000;cursor:pointer;animation:vgtin .25s both;color:#eceef4;font-size:.88rem;line-height:1.35}
-  .vgt b{display:block;color:#d9b8ff;font-size:.86rem}.vgt span{color:#c3c8d6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+  .vgt{display:flex;gap:10px;padding:12px 14px;border-radius:14px;background:#141822;border:1px solid rgba(85,196,247,.4);box-shadow:0 18px 40px -12px #000;cursor:pointer;animation:vgtin .25s both;color:#eceef4;font-size:.88rem;line-height:1.35}
+  .vgt b{display:block;color:#b8eaff;font-size:.86rem}.vgt span{color:#c3c8d6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
   @keyframes vgtin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
   .vgm{position:fixed;inset:0;z-index:310;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:18px}
   .vgm>div{width:min(440px,100%);max-height:92vh;overflow:auto;padding:24px;border-radius:18px;background:#141822;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px -20px #000}
   .vgm h3{font-size:1.15rem;margin-bottom:6px}.vgm .tg{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,.08);cursor:pointer;font-size:.92rem;color:#eceef4;margin:0;letter-spacing:0;font-weight:500}
   .vgm .tg input{width:18px;height:18px;padding:0;margin-top:2px;flex:none}.vgm .tg small{display:block;color:#8a93a8;font-size:.8rem}
-  .vgm .ok{color:#86efac;font-weight:700}.vgm .wn{color:#ffb3bd}.vgm .nt{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:10px 12px;font-size:.84rem;color:#d7dbe6;margin:10px 0}`;
+  .vgm .ok{color:#86efac;font-weight:700}.vgm .wn{color:#ffb3bd}.vgm .nt{background:rgba(85,196,247,.08);border:1px solid rgba(85,196,247,.3);border-radius:12px;padding:10px 12px;font-size:.84rem;color:#d7dbe6;margin:10px 0}`;
   document.head.appendChild(st);
 
   /* ---------- számlálók ---------- */
