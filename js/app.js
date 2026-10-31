@@ -17,6 +17,8 @@ const RESERVED = ADMIN_NAMES.map(n => n.toLowerCase());
 const isReserved = n => RESERVED.includes(String(n || '').toLowerCase());
 let ADMIN_SET = new Set(RESERVED);                          // az admin fiókok (nevek), a Firestore "admins" gyűjteményből töltődik
 const isAdminName = n => ADMIN_SET.has(String(n || '').toLowerCase());
+/* a tippadó neve egységes írásmóddal (pl. a régi „_notryn” és az „_Notryn” ugyanaz a személy) */
+const tpName = n => { const k = String(n == null ? '' : n).toLowerCase(); return ADMIN_NAMES.find(a => a.toLowerCase() === k) || n; };
 const BAD_MAIL = /@(mailinator|guerrillamail|guerrillamailblock|sharklasers|grr|10minutemail|tempmail|temp-mail|throwawaymail|yopmail|trashmail|getnada|dispostable|maildrop|fakeinbox|mohmal|mintemail|spamgourmet|tempr|emailondeck|moakt|mailnesia|mytemp|tmpmail|burnermail|vikinggold\.local|example\.(com|org|net)|test\.(com|hu))\b/i;
 const MAIL_RE = /^[^\s@]{1,64}@[^\s@]+\.[A-Za-z]{2,}$/;
 const $ = (s, r = document) => r.querySelector(s);
@@ -337,8 +339,8 @@ function homeBoard(tips) {
   const R = statRanges(), inR = (t, r) => String(t.date || '') >= r[0] && String(t.date || '') < r[1];
   const per = { week: [R.week, 'Ez a hét', R.weekLab], month: [R.month, 'Ez a hónap', R.monthLab], all: [null, 'Összes', R.from + ' óta'] }[boardPer];
   const list = per[0] ? tips.filter(t => inR(t, per[0])) : tips, by = {};
-  list.forEach(t => { const who = t.tipster || '?'; (by[who] = by[who] || []).push(t); });
-  const rows = Object.entries(by).map(([who, l]) => {
+  list.forEach(t => { const who = tpName(t.tipster) || '?', k = String(who).toLowerCase(); (by[k] = by[k] || { who, l: [] }).l.push(t); });
+  const rows = Object.values(by).map(({ who, l }) => {
     let w = 0, x = 0, pr = 0, stk = 0;
     l.forEach(t => { let s = 'pend'; try { s = effStatus(t); } catch (e) { } const o = Number(t.odds); if (s === 'win') { w++; if (o > 1) { pr += o - 1; stk++; } } else if (s === 'loss') { x++; if (o > 1) { pr -= 1; stk++; } } });
     return { who, w, dec: w + x, pct: w + x ? Math.round(w / (w + x) * 100) : null, pr, has: stk > 0, sk: streakOf(l) };
@@ -608,7 +610,7 @@ function tippekPage() {
     const cell = v => { let x = String(v == null ? '' : v).replace(/\r?\n/g, ' '); if (/^[=+\-@\t]/.test(x)) x = "'" + x; return '"' + x.replace(/"/g, '""') + '"'; };
     const sn = k => (SPORTS.find(x => x[0] === k) || [0, k])[1];
     const rows = [['Dátum', 'Idő', 'Sportág', 'Liga', 'Hazai', 'Vendég', 'Tipp', 'Szorzó', 'Végeredmény', 'Állapot', 'Tippadó']];
-    l.forEach(t => rows.push([t.date, t.time || '', sn(sportOf(t)), t.league || '', t.home, t.away, t.pick, Number(t.odds) > 1 ? Number(t.odds).toFixed(2).replace('.', ',') : '', t.result || '', LAB[effStatus(t)], t.tipster || '']));
+    l.forEach(t => rows.push([t.date, t.time || '', sn(sportOf(t)), t.league || '', t.home, t.away, t.pick, Number(t.odds) > 1 ? Number(t.odds).toFixed(2).replace('.', ',') : '', t.result || '', LAB[effStatus(t)], tpName(t.tipster) || '']));
     const blob = new Blob(['\ufeff' + rows.map(r => r.map(cell).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `vikinggold-${st.s}-${st.v === 'all' ? 'osszes' : curDate()}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -655,7 +657,7 @@ function tippekPage() {
       if (st.v === 'all' && t.date !== lastD) { lastD = t.date; dh = `<div class="dayh"><span>${huDate(t.date)}</span>${scH(cnt(l.filter(x => x.date === t.date)))}${rateHtml(t.date, st.s, true, true)}</div>`; }
       const s = effStatus(t), ot = sportOf(t) === 'jegkorong' && otFlag(t.result);
       const odds = t.odds > 1 ? ` <span class="od">@${Number(t.odds).toFixed(2)}</span>` : '';
-      const who = t.tipster || '?';
+      const who = tpName(t.tipster) || '?';
       return dh + `<div class="tl st-${s}" data-id="${t.id}"><div class="tlm"><div class="tn">${esc(t.home)} – ${esc(t.away)} ${esc(t.date)}</div>
       <div class="ts">${t.league ? `<span class="lg">${esc(t.league)}</span> · ` : ''}${t.time ? esc(t.time) + ' · ' : ''}Tipp: <b>${esc(t.pick)}</b>${odds} · Tippadó: <b class="tp">${esc(who)}</b>${isAdminName(who) ? ' <i class="tag">Admin</i>' : ''}</div></div>
       <div class="tlr"><button type="button" class="svb${svs.has(t.id) ? ' on' : ''}" data-sv="${esc(t.id)}" aria-pressed="${svs.has(t.id)}" title="Tipp mentése / eltávolítása (csak ezen az eszközön)">${svs.has(t.id) ? '★' : '☆'}</button>${admin ? `<input class="rb" data-id="${t.id}" value="${esc(t.result || '')}" placeholder="3-2" maxlength="20" aria-label="Végeredmény">` : `<span class="rb ro ${t.result ? '' : 'e'}">${esc(t.result || '3-2')}</span>`}
@@ -709,7 +711,7 @@ function tippekPage() {
     <div class="fsep">Fő tipp</div>
     <div class="g3"><div><label>Piac</label><select id="f_mk"></select></div><div id="f_sdbox"><label>Kimenet</label><select id="f_sd"></select></div><div id="f_lnbox"><label>Vonal <span class="opt" id="f_lnhint"></span></label><input id="f_ln" list="dlLines" inputmode="decimal" placeholder="pl. 2.5"></div><div id="f_frbox" hidden style="grid-column:span 2"><label>Tipp szövege</label><input id="f_free" maxlength="80"></div></div>
     <div class="pickprev" id="f_prev"></div>
-    <div class="g3"><div><label>Szorzó <span class="opt">(opc.)</span></label><input id="f_odds" inputmode="decimal" placeholder="1.85" value="${v('odds')}"></div><div><label>Tippadó</label><select id="f_tipster">${[...new Set([...(f.tipster ? [f.tipster] : []), ...tipsters])].map(n => `<option ${(f.tipster || me) === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div><div><label>Végeredmény <span class="opt">(opc.)</span></label><input id="f_result" maxlength="30" placeholder="3-2" value="${v('result')}"></div></div>
+    <div class="g3"><div><label>Szorzó <span class="opt">(opc.)</span></label><input id="f_odds" inputmode="decimal" placeholder="1.85" value="${v('odds')}"></div><div><label>Tippadó</label><select id="f_tipster">${[...new Set([...(f.tipster ? [f.tipster] : []), ...tipsters].map(tpName))].map(n => `<option ${tpName(f.tipster || me) === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div><div><label>Végeredmény <span class="opt">(opc.)</span></label><input id="f_result" maxlength="30" placeholder="3-2" value="${v('result')}"></div></div>
     <div class="g3"><div><label>Állapot <span class="opt">(nem kell állítani)</span></label><select id="f_status">${Object.entries(LAB).map(([k, n]) => `<option value="${k}" ${(f.status || 'pend') === k ? 'selected' : ''}>${k === 'pend' ? 'Automatikus (a végeredményből)' : n + ' (kézi)'}</option>`).join('')}</select></div><div style="grid-column:span 2"><p class="hint">Ha megadsz végeredményt, a nyert / vesztett / érvénytelen állapotot a rendszer a fő tippből magától eldönti (pl. 4,5 felett + 1-4 = nyert). Jégkorongnál hosszabbításnál / szétlövésnél írd az eredmény mellé: 4-3 ot vagy 3-2 so (a 60 perces piacoknál ilyenkor döntetlen az állás). Tenisznél szettek: 2-1, vagy szettenként: 6-4 3-6 7-5.</p></div></div>
     <div class="row" style="margin-top:18px"><button class="btn" type="submit">Mentés</button><button class="btn ghost" type="button" id="fcancel">Mégse</button></div></fieldset></form></div>`;
     const E = id => $('#' + id), sport = () => E('f_sport').value;
