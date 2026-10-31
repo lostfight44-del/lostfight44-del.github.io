@@ -75,7 +75,7 @@ function layout() {
     if (document.readyState === 'complete') reg(); else window.addEventListener('load', reg);
   }
   if (!document.querySelector('link[rel=manifest]')) document.head.insertAdjacentHTML('beforeend', '<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"><link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png"><link rel="shortcut icon" href="/assets/favicon.ico"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="VikingGOLD">');
-  const nav0 = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['updates', '/updates', 'Updates'], ['chat', '/chat', 'Chat'], ['calc', '/kalkulator', 'Kalkulátor'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
+  const nav0 = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['updates', '/updates', 'Updates'], ['chat', '/chat', 'Chat'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
   const nav = nav0.concat(user && (adminFlag || (profile && profile.vip)) ? [['vip', '/vip', '★ VIP']] : []);
   $('#hdr').innerHTML = `
 <header class="top">
@@ -88,7 +88,7 @@ function layout() {
       ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : profile && profile.vip ? 'VIP tag' : 'Tag'}</small></div><a href="/tippek">Tippek</a>${isAdmin() || (profile && profile.vip) ? '<a href="/vip" style="color:#d4a93c;font-weight:700">★ VIP Klub</a>' : ''}<a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
-  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, kosárlabda és tenisz tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/kalkulator">Kalkulátor</a><a href="/felelos-jatek">Felelős játék</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Lelki Elsősegély Telefonszolgálat, 116-123 (ingyenes, 0–24). <a href="/felelos-jatek">Felelős játék</a>.</p></div></footer>`;
+  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, kosárlabda és tenisz tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/felelos-jatek">Felelős játék</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Lelki Elsősegély Telefonszolgálat, 116-123 (ingyenes, 0–24). <a href="/felelos-jatek">Felelős játék</a>.</p></div></footer>`;
   startClock();
   // menü viselkedés
   const uic = $('#uic'), um = $('#umenu'), bg = $('#burger'), nv = $('#nav');
