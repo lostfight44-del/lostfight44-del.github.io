@@ -69,8 +69,13 @@ function startClock() {
 
 /* ---------- oldalváz ---------- */
 function layout() {
-  if (!document.querySelector('link[rel=manifest]')) document.head.insertAdjacentHTML('beforeend', '<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"><link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png"><link rel="shortcut icon" href="/assets/favicon.ico"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"><meta property="og:image" content="/assets/logo.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="VikingGOLD">');
-  const nav0 = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['updates', '/updates', 'Updates'], ['chat', '/chat', 'Chat'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
+  if ('serviceWorker' in navigator && !window.__vgSw) {   // offline támogatás + telefonos push (egyetlen service worker)
+    window.__vgSw = 1;
+    const reg = () => navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => { });
+    if (document.readyState === 'complete') reg(); else window.addEventListener('load', reg);
+  }
+  if (!document.querySelector('link[rel=manifest]')) document.head.insertAdjacentHTML('beforeend', '<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"><link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png"><link rel="shortcut icon" href="/assets/favicon.ico"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="VikingGOLD">');
+  const nav0 = [['home', '/', 'Kezdőlap'], ['tippek', '/tippek', 'Tippek'], ['updates', '/updates', 'Updates'], ['chat', '/chat', 'Chat'], ['calc', '/kalkulator', 'Kalkulátor'], ['contact', '/elerhetosegek', 'Elérhetőségek']];
   const nav = nav0.concat(user && (adminFlag || (profile && profile.vip)) ? [['vip', '/vip', '★ VIP']] : []);
   $('#hdr').innerHTML = `
 <header class="top">
@@ -83,7 +88,7 @@ function layout() {
       ? `<div class="who"><span>${esc((profile && profile.name) || user.displayName || user.email.split('@')[0])}</span><small>${isAdmin() ? 'Admin' : profile && profile.vip ? 'VIP tag' : 'Tag'}</small></div><a href="/tippek">Tippek</a>${isAdmin() || (profile && profile.vip) ? '<a href="/vip" style="color:#d4a93c;font-weight:700">★ VIP Klub</a>' : ''}<a href="/beallitasok">${isAdmin() ? 'Beállítások / Tagkezelés' : 'Beállítások'}</a><a href="#" id="logout">Kijelentkezés</a>`
       : '<a href="/auth?mode=login">Belépés</a><a href="/auth?mode=register">Regisztráció</a>'}</div></div>
 </header>`;
-  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, kosárlabda és tenisz tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Kék Vonal 116-123.</p></div></footer>`;
+  $('#ftr').innerHTML = `<footer class="foot"><div class="wrap"><div><b>Viking<span class="g">GOLD</span></b><p>Labdarúgás, jégkorong, kézilabda, kosárlabda és tenisz tippek.</p></div><div class="fl"><a href="/">Kezdőlap</a><a href="/tippek">Tippek</a><a href="/updates">Updates</a><a href="/chat">Chat</a><a href="/kalkulator">Kalkulátor</a><a href="/felelos-jatek">Felelős játék</a><a href="/elerhetosegek">Elérhetőségek</a></div><p class="small">A tippek nem garantálnak nyereményt. A fogadás kockázattal jár – csak annyit tegyél fel, amennyit megengedhetsz magadnak. 18 év alatt tilos. Segítség: Lelki Elsősegély Telefonszolgálat, 116-123 (ingyenes, 0–24). <a href="/felelos-jatek">Felelős játék</a>.</p></div></footer>`;
   startClock();
   // menü viselkedés
   const uic = $('#uic'), um = $('#umenu'), bg = $('#burger'), nv = $('#nav');
@@ -119,8 +124,32 @@ function summary(l) {
   const kstat = ls ? 'loss' : p ? 'pend' : combN ? 'win' : 'pend';
   const kLab = { win: 'a kombi nyert', loss: 'a kombi elbukott', pend: 'még függőben' }[kstat];
   const f2 = n => n.toFixed(2).replace('.', ',');
-  return combN > 1 ? `<p class="sumnote">Ha mindet egy szelvényen játszanád: <b>${f2(comb)}-szeres</b> szorzó, ${kLab}.</p>` : '';
+  const sk = streakOf(l), kp = [];
+  if (staked) {
+    const roi = profit / staked * 100, sgn = n => (n > 0 ? '+' : n < 0 ? '−' : '') + f2(Math.abs(n));
+    kp.push(`<div class="kpi"><b class="${profit > 0 ? 'pos' : profit < 0 ? 'neg' : ''}">${sgn(profit)}</b><span>egység <i>(1 egységes tét)</i></span></div>`);
+    kp.push(`<div class="kpi"><b class="${roi > 0 ? 'pos' : roi < 0 ? 'neg' : ''}">${sgn(roi).replace(/,00$/, '')}%</b><span>ROI</span></div>`);
+  }
+  if (oddsN) kp.push(`<div class="kpi"><b>${f2(oddsSum / oddsN)}</b><span>átlag szorzó</span></div>`);
+  if (sk.n >= 2) kp.push(`<div class="kpi"><b class="${sk.t === 'win' ? 'pos' : 'neg'}">${sk.t === 'win' ? '🔥' : '❄️'} ${sk.n}</b><span>${sk.t === 'win' ? 'nyerő' : 'vesztes'} széria</span></div>`);
+  const kh = kp.length ? `<div class="kpis">${kp.join('')}</div>` : '';
+  return kh + (combN > 1 ? `<p class="sumnote">Ha mindet egy szelvényen játszanád: <b>${f2(comb)}-szeres</b> szorzó, ${kLab}.</p>` : '');
 }
+/* aktuális széria: a legutóbbi lezárt (nyert / vesztett) tippek egymás után – az érvénytelen és a függő kimarad */
+function streakOf(l) {
+  const d = l.map(t => { let s = 'pend'; try { s = effStatus(t); } catch (e) { } return [t, s]; }).filter(x => x[1] === 'win' || x[1] === 'loss')
+    .sort((a, b) => String(a[0].date).localeCompare(String(b[0].date)) || String(a[0].time || '').localeCompare(String(b[0].time || '')));
+  let n = 0, t = '';
+  for (let i = d.length - 1; i >= 0; i--) { if (!t) t = d[i][1]; if (d[i][1] !== t) break; n++; }
+  return { n, t };
+}
+/* mentett tippek (csak ezen az eszközön, localStorage) */
+const SV = {
+  all() { try { return new Set(JSON.parse(localStorage.getItem('vg_saved') || '[]')); } catch (e) { return new Set(); } },
+  has(id) { return SV.all().has(id); },
+  toggle(id) { const s = SV.all(); let on; if (s.has(id)) { s.delete(id); on = false; } else { s.add(id); on = true; } try { localStorage.setItem('vg_saved', JSON.stringify([...s].slice(-500))); } catch (e) { } return on; }
+};
+const norm = x => String(x == null ? '' : x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 /* bejött | összes (az érvénytelen tippek nem számítanak bele) */
 const cnt = l => { let w = 0, n = 0, p = 0; l.forEach(t => { const s = effStatus(t); if (s === 'void') return; n++; if (s === 'win') w++; else if (s === 'pend') p++; }); return { w, n, p }; };
 /* vonaldiagram (mint a VIP-ben): napról napra összesített eltalált / nem talált tippek + találati arány */
@@ -143,6 +172,29 @@ function tipChart(list) {
   <path d="${path(p => p.W, yc)}" fill="none" stroke="#4ade9a" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
   <path d="${path(p => p.r, yp)}" fill="none" stroke="#c08bff" stroke-width="2.4" stroke-dasharray="6 5" stroke-linejoin="round" stroke-linecap="round"/>
   ${dots(p => p.X, yc, '#ff7b6b', ' nem talált összesen')}${dots(p => p.W, yc, '#4ade9a', ' eltalált összesen')}${dots(p => p.r, yp, '#c08bff', '% találati arány')}</svg>`);
+}
+/* profitgörbe: napról napra összegzett eredmény 1 egységes téttel (csak a szorzóval rendelkező, lezárt tippek) */
+function equityChart(list) {
+  const days = {}; let n = 0;
+  list.forEach(t => { const s = effStatus(t), o = Number(t.odds); if (!(o > 1) || (s !== 'win' && s !== 'loss')) return; n++; days[t.date] = (days[t.date] || 0) + (s === 'win' ? o - 1 : -1); });
+  const box = h => `<div style="background:rgba(15,26,45,.78);border:1px solid rgba(168,85,247,.35);border-radius:16px;padding:16px 18px;margin:0 0 18px"><h3 style="font-size:1rem;margin:0 0 4px">Profitgörbe <span style="font-weight:500;color:#8497b4;font-size:.8rem">(1 egységes tét, egység)</span></h3>${h}</div>`;
+  const ds = Object.keys(days).sort();
+  if (!ds.length) return box('<div style="color:#8497b4;padding:22px 0;text-align:center;font-size:.9rem">Még nincs szorzóval rendelkező, lezárt tipp – amint lesz, itt jelenik meg a profitgörbe.</div>');
+  let c = 0; const P = ds.map(d => { c += days[d]; return { d, c: Math.round(c * 100) / 100 }; });
+  const w = 640, h = 220, L = 40, R = 16, T = 12, B = 28;
+  const lo = Math.min(0, ...P.map(p => p.c)), hi = Math.max(0.5, ...P.map(p => p.c)), span = hi - lo || 1;
+  const nx = i => P.length < 2 ? (L + w - R) / 2 : L + i * (w - L - R) / (P.length - 1), ny = v => h - B - (v - lo) / span * (h - B - T);
+  const line = P.map((p, i) => (i ? 'L' : 'M') + nx(i).toFixed(1) + ' ' + ny(p.c).toFixed(1)).join(' ');
+  const area = `${line} L${nx(P.length - 1).toFixed(1)} ${ny(0).toFixed(1)} L${nx(0).toFixed(1)} ${ny(0).toFixed(1)} Z`;
+  const last = P[P.length - 1].c, col = last >= 0 ? '#4ade9a' : '#ff7b6b', ax = 'fill:#8497b4;font:10px Inter,sans-serif';
+  const f1 = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1).replace('.', ',');
+  const grid = [0, .25, .5, .75, 1].map(k => { const v = lo + span * k, y = ny(v).toFixed(1); return `<line x1="${L}" x2="${w - R}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.07)"/><text style="${ax}" x="${L - 6}" y="${+y + 3}" text-anchor="end">${f1(v)}</text>`; }).join('');
+  const step = Math.ceil(P.length / 7), xl = P.map((p, i) => i % step === 0 || i === P.length - 1 ? `<text style="${ax}" x="${nx(i).toFixed(1)}" y="${h - 8}" text-anchor="middle">${p.d.slice(5).replace('-', '.')}.</text>` : '').join('');
+  const dots = P.map((p, i) => `<circle cx="${nx(i).toFixed(1)}" cy="${ny(p.c).toFixed(1)}" r="3.4" fill="${col}"><title>${p.d}: ${f1(p.c)} egység</title></circle>`).join('');
+  return box(`<div style="font-size:.82rem;color:#8497b4;margin:6px 0 4px">Jelenlegi állás: <b style="color:${col}">${f1(last)} egység</b> · ${n} lezárt tipp</div>
+  <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;overflow:visible" role="img" aria-label="Profitgörbe">${grid}${xl}
+  <line x1="${L}" x2="${w - R}" y1="${ny(0).toFixed(1)}" y2="${ny(0).toFixed(1)}" stroke="rgba(255,255,255,.28)" stroke-dasharray="4 4"/>
+  <path d="${area}" fill="${col}" fill-opacity=".12"/><path d="${line}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`);
 }
 const scH = c => `<span class="sc" title="${c.w} bejött, ${c.n - c.w - c.p} elbukott, ${c.p} függőben"><b class="sw">${c.w}</b><i>|</i><b>${c.n}</b></span>`;
 const fmtAvg = n => n.toFixed(1).replace('.', ',');
@@ -275,10 +327,33 @@ function homeStatsDraw(tips, err, id = 'statBox', vip = false) {
   box.innerHTML = card(PRE + 'Heti statisztika', R.weekLab, tally(wl), tally(tips.filter(t => inR(t, R.pweek))), 'Előző hét', wl) + card(PRE + 'Havi statisztika', R.monthLab, tally(ml), tally(tips.filter(t => inR(t, R.pmonth))), 'Előző hónap', ml);
 }
 
+/* tippadói ranglista (a kezdőlapon): találat, arány, profit 1 egységes téttel, széria */
+let boardTips = null, boardPer = 'month';
+function homeBoard(tips) {
+  const box = $('#boardBox'); if (!box) return;
+  statCss();
+  if (!tips) { box.innerHTML = `<div class="vgs vgs-x"><div class="big">${tips === null ? '🔒' : '⚠️'}</div><p style="font-size:.95rem">${tips === null ? 'A ranglistát a regisztrált, belépett tagok látják.' : 'A ranglista most nem tölthető be.'}</p></div>`; return; }
+  boardTips = tips;
+  const R = statRanges(), inR = (t, r) => String(t.date || '') >= r[0] && String(t.date || '') < r[1];
+  const per = { week: [R.week, 'Ez a hét', R.weekLab], month: [R.month, 'Ez a hónap', R.monthLab], all: [null, 'Összes', R.from + ' óta'] }[boardPer];
+  const list = per[0] ? tips.filter(t => inR(t, per[0])) : tips, by = {};
+  list.forEach(t => { const who = t.tipster || '?'; (by[who] = by[who] || []).push(t); });
+  const rows = Object.entries(by).map(([who, l]) => {
+    let w = 0, x = 0, pr = 0, stk = 0;
+    l.forEach(t => { let s = 'pend'; try { s = effStatus(t); } catch (e) { } const o = Number(t.odds); if (s === 'win') { w++; if (o > 1) { pr += o - 1; stk++; } } else if (s === 'loss') { x++; if (o > 1) { pr -= 1; stk++; } } });
+    return { who, w, dec: w + x, pct: w + x ? Math.round(w / (w + x) * 100) : null, pr, has: stk > 0, sk: streakOf(l) };
+  }).filter(r => r.dec).sort((a, b) => b.pr - a.pr || (b.pct || 0) - (a.pct || 0) || b.dec - a.dec);
+  const f2 = n => n.toFixed(2).replace('.', ','), sg = n => (n > 0 ? '+' : n < 0 ? '−' : '') + f2(Math.abs(n)), medal = ['🥇', '🥈', '🥉'];
+  const tabs = [['week', 'Hét'], ['month', 'Hónap'], ['all', 'Összes']].map(([k, n]) => `<button type="button" class="btab${boardPer === k ? ' on' : ''}" data-bp="${k}">${n}</button>`).join('');
+  const tbl = rows.length ? `<div class="btbl"><div class="brow bh"><span>#</span><span>Tippadó</span><span>Találat</span><span>Arány</span><span>Profit</span><span>Széria</span></div>${rows.map((r, i) => `<div class="brow"><span>${medal[i] || i + 1}</span><span class="bn">${esc(r.who)}</span><span>${r.w} | ${r.dec}</span><span><em class="bar"><u style="width:${r.pct}%"></u></em>${r.pct}%</span><span class="${r.has ? (r.pr > 0 ? 'pos' : r.pr < 0 ? 'neg' : '') : ''}">${r.has ? sg(r.pr) : '–'}</span><span>${r.sk.n >= 2 ? (r.sk.t === 'win' ? '🔥 ' : '❄️ ') + r.sk.n : '–'}</span></div>`).join('')}</div><p class="small" style="margin:12px 0 0">A profit 1 egységes tétet feltételez, csak a szorzóval rendelkező, lezárt tippekre. A múltbeli eredmény nem garantál jövőbeli nyereséget.</p>` : '<p class="small" style="padding:16px 0">Ebben az időszakban még nincs lezárt tipp.</p>';
+  box.innerHTML = `<div class="vgs board"><div class="vgs-h"><span>Tippadói ranglista</span><small>${per[1]} · ${per[2]}</small></div><div class="btabs">${tabs}</div>${tbl}</div>`;
+  box.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => { boardPer = b.dataset.bp; homeBoard(boardTips); });
+}
+
 function watchStats() {
-  const done = sn => homeStats(sn.docs.map(d => ({ id: d.id, ...d.data() })));
+  const done = sn => { const l = sn.docs.map(d => ({ id: d.id, ...d.data() })); homeStats(l); try { homeBoard(l); } catch (e) { const b = $('#boardBox'); if (b) b.innerHTML = '<div class="vgs vgs-x"><p class="small">A ranglista most nem tölthető be.</p></div>'; } };
   onSnapshot(query(collection(db, 'tips'), where('date', '>=', statRanges().from)), done,
-    e1 => onSnapshot(query(collection(db, 'tips'), orderBy('date', 'desc'), limit(1000)), done, e2 => homeStats(undefined, e2 || e1)));   // ha a szűrt lekérdezés nem megy, a Tippek oldalival azonos módon próbáljuk
+    e1 => onSnapshot(query(collection(db, 'tips'), orderBy('date', 'desc'), limit(1000)), done, e2 => { homeStats(undefined, e2 || e1); homeBoard(undefined); }));   // ha a szűrt lekérdezés nem megy, a Tippek oldalival azonos módon próbáljuk
 }
 
 function watchVipStats() {
@@ -308,7 +383,7 @@ function homePage() {
     onSnapshot(query(collection(db, 'tips'), where('date', '==', ymd(new Date()))), s => { $('#stToday').textContent = s.size; }, () => { });
     watchStats();
     watchVipStats();
-  } else { homeStats(null); homeStats(null, null, 'vipStatBox', true); }
+  } else { homeStats(null); homeStats(null, null, 'vipStatBox', true); homeBoard(null); }
 }
 
 
@@ -431,25 +506,53 @@ function tippekPage() {
   const gv = gate(); if (gv) { root.innerHTML = gv; gateEvents(); showStoredFlash(); return; }
   const admin = isAdmin(), today = ymd(new Date()), tomorrow = ymd(new Date(Date.now() + 864e5));
   const st = {
-    s: SPORT_KEYS.includes(params.get('s')) ? params.get('s') : 'jegkorong',
+    s: SPORT_KEYS.includes(params.get('s')) ? params.get('s') : (() => { try { const x = localStorage.getItem('vg_sport'); return SPORT_KEYS.includes(x) ? x : 'jegkorong'; } catch (e) { return 'jegkorong'; } })(),
     v: ['today', 'tomorrow', 'date', 'all'].includes(params.get('v')) ? params.get('v') : 'today',
     d: /^\d{4}-\d{2}-\d{2}$/.test(params.get('d') || '') ? params.get('d') : today
   };
   let all = [], loaded = false, form = null, pending = false;
-  const sync = () => history.replaceState(null, '', `/tippek?s=${st.s}&v=${st.v}${st.v === 'date' ? '&d=' + st.d : ''}`);
+  const flt = { q: '', lg: '', o1: '', o2: '', sv: false };
+  const num = x => { const n = parseFloat(String(x).replace(',', '.')); return isFinite(n) ? n : null; };
+  const fOn = () => !!(flt.q || flt.lg || flt.o1 || flt.o2 || flt.sv);
+  const passF = t => {
+    if (flt.lg && (t.league || '') !== flt.lg) return false;
+    const o1 = num(flt.o1), o2 = num(flt.o2), o = Number(t.odds) > 1 ? Number(t.odds) : 0;
+    if (o1 != null && !(o && o >= o1)) return false;
+    if (o2 != null && !(o && o <= o2)) return false;
+    if (flt.sv && !SV.has(t.id)) return false;
+    if (flt.q) { const h = norm([t.home, t.away, t.pick, t.league, t.tipster, t.result].join(' ')); if (!flt.q.split(/\s+/).every(w => h.includes(w))) return false; }
+    return true;
+  };
+  const sync = () => { history.replaceState(null, '', `/tippek?s=${st.s}&v=${st.v}${st.v === 'date' ? '&d=' + st.d : ''}`); try { localStorage.setItem('vg_sport', st.s); } catch (e) { } };
   const curDate = () => st.v === 'tomorrow' ? tomorrow : st.v === 'date' ? st.d : today;
+  try { localStorage.setItem('vg_sport', st.s); } catch (e) { }   // a legutóbb nézett sportágat megjegyezzük
 
   root.innerHTML = `<section class="wrap" style="padding-top:26px">
   <div class="row" style="justify-content:space-between;margin-bottom:12px"><h1 style="margin:0">Tippek</h1>${admin ? '<button class="btn sm" id="newBtn">+ Új tipp</button>' : ''}</div>
   <div class="tabs" id="sTabs"></div>
   <div class="tabs vtabs" id="vTabs"></div>
   <div class="row" id="dRow" style="margin:-6px 0 14px" hidden><input id="dpick" type="date" style="max-width:200px" aria-label="Dátum választása"></div>
+  <div class="fbar" id="fbar" role="search">
+    <input id="fq" type="search" placeholder="Keresés: csapat, tipp, tippadó…" aria-label="Keresés a tippek között" autocomplete="off">
+    <select id="flg" aria-label="Liga szűrő"><option value="">Minden liga</option></select>
+    <input id="fo1" inputmode="decimal" placeholder="Szorzó min." aria-label="Minimum szorzó" autocomplete="off">
+    <input id="fo2" inputmode="decimal" placeholder="Szorzó max." aria-label="Maximum szorzó" autocomplete="off">
+    <label class="fchk"><input type="checkbox" id="fsv"> ★ Mentettek</label>
+    <button type="button" class="btn ghost sm" id="fclr" hidden>Szűrők törlése</button>
+    <button type="button" class="btn ghost sm" id="fcsv" title="A most látható tippek letöltése CSV-ben (Excelben megnyitható)">⬇ CSV</button>
+  </div>
   <div id="formBox"></div>
   <div class="sbar" id="sbar"></div>
   <div id="tchart"></div>
+  <div id="echart"></div>
   <div class="tlog"><div class="tlh"><span>Tippek és eredmények</span><small id="tlSub"></small></div><div id="rbox"></div><div id="tsum"></div><div id="tlist"><div class="empty">Betöltés…</div></div></div>
   </section>`;
   showStoredFlash();
+
+  const fRead = () => { flt.q = norm($('#fq').value.trim()); flt.lg = $('#flg').value; flt.o1 = $('#fo1').value.trim(); flt.o2 = $('#fo2').value.trim(); flt.sv = $('#fsv').checked; $('#fclr').hidden = !fOn(); list(); };
+  $('#fbar').addEventListener('input', fRead);
+  $('#fclr').onclick = () => { $('#fq').value = ''; $('#flg').value = ''; $('#fo1').value = ''; $('#fo2').value = ''; $('#fsv').checked = false; fRead(); };
+  $('#fcsv').onclick = () => exportCsv();
 
   let rts = [], unR = null, rKey = '', rErr = false;
   const dayDate = () => st.v === 'all' ? today : curDate();
@@ -485,6 +588,31 @@ function tippekPage() {
     const b = e.target.closest('.star'); if (!b || b.disabled) return;
     const r = b.closest('.rate'); vote(r.dataset.rd, r.dataset.rs, +b.dataset.v);
   });
+  $('.tlog').addEventListener('click', e => {
+    const b = e.target.closest('.svb'); if (!b) return;
+    const on = SV.toggle(b.dataset.sv);
+    if (flt.sv) { list(); return; }
+    b.classList.toggle('on', on); b.textContent = on ? '★' : '☆'; b.setAttribute('aria-pressed', String(on));
+  });
+  function fillLg() {
+    const sel = $('#flg'); if (!sel) return;
+    const ls = [...new Set(all.filter(t => sportOf(t) === st.s && t.league).map(t => t.league))].sort((a, b) => a.localeCompare(b, 'hu'));
+    const key = st.s + '|' + ls.join('|');
+    if (sel.dataset.k === key) return;
+    sel.dataset.k = key;
+    if (flt.lg && !ls.includes(flt.lg)) { flt.lg = ''; $('#fclr').hidden = !fOn(); }
+    sel.innerHTML = '<option value="">Minden liga</option>' + ls.map(n => `<option value="${esc(n)}"${n === flt.lg ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  }
+  function exportCsv() {
+    const l = matches(); if (!l.length) { toast('Nincs mit exportálni ezen a nézeten.', 'err'); return; }
+    const cell = v => { let x = String(v == null ? '' : v).replace(/\r?\n/g, ' '); if (/^[=+\-@\t]/.test(x)) x = "'" + x; return '"' + x.replace(/"/g, '""') + '"'; };
+    const sn = k => (SPORTS.find(x => x[0] === k) || [0, k])[1];
+    const rows = [['Dátum', 'Idő', 'Sportág', 'Liga', 'Hazai', 'Vendég', 'Tipp', 'Szorzó', 'Végeredmény', 'Állapot', 'Tippadó']];
+    l.forEach(t => rows.push([t.date, t.time || '', sn(sportOf(t)), t.league || '', t.home, t.away, t.pick, Number(t.odds) > 1 ? Number(t.odds).toFixed(2).replace('.', ',') : '', t.result || '', LAB[effStatus(t)], t.tipster || '']));
+    const blob = new Blob(['\ufeff' + rows.map(r => r.map(cell).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `vikinggold-${st.s}-${st.v === 'all' ? 'osszes' : curDate()}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
   function scores() {
     const l = matches(), d = dayDate(), inDay = x => x.date === d, inSp = x => sportOf(x) === st.s;
     const nm = SPORTS.find(x => x[0] === st.s), sn = nm ? nm[1] : '';
@@ -494,7 +622,7 @@ function tippekPage() {
     $('#tlSub').innerHTML = (st.v === 'all' ? 'összes nap' : huDate(curDate())) + ' · ' + l.length + ' tipp · ' + scH(cnt(l));
   }
   const matches = () => {
-    let l = all.filter(t => sportOf(t) === st.s);
+    let l = all.filter(t => sportOf(t) === st.s).filter(passF);
     if (st.v !== 'all') l = l.filter(t => t.date === curDate());
     const tk = t => t.time || '99:99';   // a korábbi kezdés van elöl, az idő nélküliek a végén
     return l.sort(st.v === 'all' ? (a, b) => b.date.localeCompare(a.date) || tk(a).localeCompare(tk(b)) : (a, b) => tk(a).localeCompare(tk(b)));
@@ -513,12 +641,15 @@ function tippekPage() {
     const ae = document.activeElement;
     if (ae && ae.classList && ae.classList.contains('rb') && $('#tlist').contains(ae)) { pending = true; return; }   // gépelés közben nem frissítjük
     pending = false;
+    fillLg();
     const l = matches();
     $('#tsum').innerHTML = summary(l);
-    $('#tchart').innerHTML = tipChart(all.filter(t => sportOf(t) === st.s));
+    const sl = all.filter(t => sportOf(t) === st.s).filter(passF);
+    $('#tchart').innerHTML = tipChart(sl);
+    $('#echart').innerHTML = equityChart(sl);
     scores();
     if (st.v !== 'all') $('#rbox').innerHTML = rateHtml(curDate(), st.s, l.length > 0, false);
-    let lastD = '';
+    let lastD = ''; const svs = SV.all();
     $('#tlist').innerHTML = l.length ? l.map(t => {
       let dh = '';
       if (st.v === 'all' && t.date !== lastD) { lastD = t.date; dh = `<div class="dayh"><span>${huDate(t.date)}</span>${scH(cnt(l.filter(x => x.date === t.date)))}${rateHtml(t.date, st.s, true, true)}</div>`; }
@@ -527,10 +658,10 @@ function tippekPage() {
       const who = t.tipster || '?';
       return dh + `<div class="tl st-${s}" data-id="${t.id}"><div class="tlm"><div class="tn">${esc(t.home)} – ${esc(t.away)} ${esc(t.date)}</div>
       <div class="ts">${t.league ? `<span class="lg">${esc(t.league)}</span> · ` : ''}${t.time ? esc(t.time) + ' · ' : ''}Tipp: <b>${esc(t.pick)}</b>${odds} · Tippadó: <b class="tp">${esc(who)}</b>${isAdminName(who) ? ' <i class="tag">Admin</i>' : ''}</div></div>
-      <div class="tlr">${admin ? `<input class="rb" data-id="${t.id}" value="${esc(t.result || '')}" placeholder="3-2" maxlength="20" aria-label="Végeredmény">` : `<span class="rb ro ${t.result ? '' : 'e'}">${esc(t.result || '3-2')}</span>`}
+      <div class="tlr"><button type="button" class="svb${svs.has(t.id) ? ' on' : ''}" data-sv="${esc(t.id)}" aria-pressed="${svs.has(t.id)}" title="Tipp mentése / eltávolítása (csak ezen az eszközön)">${svs.has(t.id) ? '★' : '☆'}</button>${admin ? `<input class="rb" data-id="${t.id}" value="${esc(t.result || '')}" placeholder="3-2" maxlength="20" aria-label="Végeredmény">` : `<span class="rb ro ${t.result ? '' : 'e'}">${esc(t.result || '3-2')}</span>`}
       ${admin ? `<button class="icb" data-cy="${t.id}" title="Állapot váltása (eredmény alapján automatikus)">${ICON[s]}</button>` : ICON[s]}${ot ? '<span class="ic ot" title="Hosszabbítás / szétlövés">🏒</span>' : ''}
       ${admin ? `<a href="#" class="ra" data-edit="${t.id}">Szerkesztés</a> · <a href="#" class="ra" data-del="${t.id}">Törlés</a>` : ''}</div></div>`;
-    }).join('') : `<div class="empty">Ehhez a sportághoz erre a napra még nincs tipp.${admin ? ' A „+ Új tipp” gombbal tölthetsz fel egyet.' : ' Nézz vissza később!'}</div>`;
+    }).join('') : `<div class="empty">${fOn() ? 'Nincs a szűrőknek megfelelő tipp. Módosítsd vagy töröld a szűrőket.' : 'Ehhez a sportághoz erre a napra még nincs tipp.'}${admin ? ' A „+ Új tipp” gombbal tölthetsz fel egyet.' : ' Nézz vissza később!'}</div>`;
     if (!admin) return;
     $('#tlist').querySelectorAll('.rb').forEach(i => {
       i._saved = (all.find(x => x.id === i.dataset.id) || {}).result || '';
