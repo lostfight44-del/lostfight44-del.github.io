@@ -152,6 +152,8 @@ const gate = (t, p, x = '') => { app.innerHTML = `<div class="gate"><div style="
 
 const auth = getAuth(initializeApp(firebaseConfig)), db = getFirestore(auth.app);
 let isAdmin = false, TPS = [], tips = [], cat = 'all', day = 'all', ME = '', pend = false;
+const KNOWN_TP = ['_Notryn', 'Kriszhhh'];   // egységes írásmód: a „_notryn” és az „_Notryn” ugyanaz a személy
+const tpN = n => { const k = String(n == null ? '' : n).toLowerCase(); return KNOWN_TP.find(a => a.toLowerCase() === k) || n; };
 setPersistence(auth, browserSessionPersistence).catch(() => { }).finally(() => onAuthStateChanged(auth, init));
 
 async function init(u) {
@@ -240,7 +242,7 @@ function card(t) {
   const inp = (f, val, ph, lab) => `<input class="rb" data-id="${t.id}" data-f="${f}" value="${esc(val || '')}" placeholder="${ph}" maxlength="30" aria-label="${lab}">`;
   const ro = (val, lab) => val ? `<span class="rbro">${lab}: <b>${esc(val)}</b></span>` : '';
   return `<div class="tip ${s}"><div class="st"></div><div><div class="meta">${c[2]} ${c[1].toUpperCase()}${t.league ? ' · ' + esc(t.league) : ''} · ${esc(t.date)}${t.time ? ' ' + esc(t.time) : ''}</div>
-  <div class="match">${esc(t.home)}${t.away ? ' – ' + esc(t.away) : ''}</div><div class="pick">Tipp: <b>${esc(t.pick)}</b> · Tippadó: <b>${esc(t.tipster || 'Admin')}</b></div>${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
+  <div class="match">${esc(t.home)}${t.away ? ' – ' + esc(t.away) : ''}</div><div class="pick">Tipp: <b>${esc(t.pick)}</b> · Tippadó: <b>${esc(tpN(t.tipster) || 'Admin')}</b></div>${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
   ${isAdmin ? `<div class="resrow">${inp('result', t.result, '3-2', 'Végeredmény')}${t.sport === 'labdarugas' && isCor ? inp('corners', t.corners, '5-6 vagy 11', 'Szögletek (csak a kiértékeléshez)') : ''}</div>` : (t.result ? `<div class="resrow">${ro(t.result, 'Végeredmény')}</div>` : '')}</div>
   <div class="right">${t.odds ? `<div class="odd">${(+t.odds).toFixed(2)}</div>` : ''}<span class="pill ${s}">${LAB[s]}</span>
   ${isAdmin ? `<div class="adm"><button class="btn sm ghost" data-st="${t.id}" data-cur="${s}">Állapot ›</button><button class="btn sm ghost" data-ed="${t.id}">Szerk.</button><button class="btn sm ghost del" data-rm="${t.id}">✕</button></div>` : ''}</div></div>`;
@@ -264,7 +266,7 @@ function openForm(t) {
     <div class="fg"><div><label>Odds <span class="opt">(opc.)</span></label><input id="f_odds" type="number" step="0.01" min="1" value="${v('odds')}"></div>
     <div><label>Végeredmény <span class="opt">(opc.)</span></label><input id="f_result" maxlength="30" placeholder="3-2" value="${v('result')}"></div>
     <div id="f_cobox" hidden><label>Szögletek <span class="opt">(hazai-vendég, pl. 5-6)</span></label><input id="f_corners" maxlength="20" placeholder="5-6 vagy összesen 11" value="${v('corners')}"></div>
-    <div><label>Tippadó</label><select id="f_tipster">${[...new Set([...(f.tipster ? [f.tipster] : []), ME, ...TPS])].map(n => `<option ${(f.tipster || ME) === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
+    <div><label>Tippadó</label><select id="f_tipster">${[...new Set([...(f.tipster ? [f.tipster] : []), ME, ...TPS].map(tpN))].map(n => `<option ${tpN(f.tipster || ME) === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
     <div><label>Állapot</label><select id="f_status">${Object.entries(LAB).map(([k, n]) => `<option value="${k}" ${(f.status || 'pend') === k ? 'selected' : ''}>${k === 'pend' ? 'Automatikus (az eredményből)' : n + ' (kézi)'}</option>`).join('')}</select></div></div>
     <div style="margin-bottom:12px"><label>Megjegyzés <span class="opt">(opc.)</span></label><input id="f_note" maxlength="200" value="${v('note')}"></div>
     <p class="hint">Ha megadod a végeredményt (és szögletes tippnél a szögleteket), a nyert / vesztett / érvénytelen állapotot a rendszer magától kiszámolja. Később a tipp kártyáján is beírhatod az eredményt. Jégkorongnál hosszabbítás / szétlövés: 4-3 ot vagy 3-2 so. Tenisznél szettek: 2-1 vagy 6-4 3-6 7-5.</p>
