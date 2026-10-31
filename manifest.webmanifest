@@ -46,17 +46,6 @@
       ]
     },
     {
-      "name": "Tétkezelő kalkulátor",
-      "short_name": "Kalkulátor",
-      "url": "/kalkulator",
-      "icons": [
-        {
-          "src": "/assets/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
       "name": "Chat",
       "short_name": "Chat",
       "url": "/chat",
