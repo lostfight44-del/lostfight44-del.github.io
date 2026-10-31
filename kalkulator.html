@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04060d">
+<title>Tétkezelő kalkulátor | VikingGOLD</title>
+<meta name="description" content="Ingyenes tétkezelő kalkulátor: Kelly-kritérium, fix százalékos tét, kombi szorzó, szorzó–valószínűség átváltás és bankroll-napló egy helyen.">
+<link rel="canonical" href="https://vikinggoldpro.github.io/kalkulator">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VikingGOLD">
+<meta property="og:locale" content="hu_HU">
+<meta property="og:title" content="Tétkezelő kalkulátor | VikingGOLD">
+<meta property="og:description" content="Kelly-kritérium, fix százalékos tét, kombi szorzó, szorzó–valószínűség átváltás és bankroll-napló egy helyen.">
+<meta property="og:url" content="https://vikinggoldpro.github.io/kalkulator">
+<meta property="og:image" content="https://vikinggoldpro.github.io/assets/logo.png">
+<meta name="twitter:card" content="summary">
+<script>if(/\.html$/.test(location.pathname))history.replaceState(null,"",location.pathname.replace(/\/index\.html$/,"/").replace(/\.html$/,"")+location.search+location.hash)</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=20261031a">
+</head>
+<body data-page="calc">
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="hdr"></div>
+<main id="main">
+<section class="wrap" style="padding-top:30px">
+  <h1>Tétkezelő <span class="g">kalkulátor</span></h1>
+  <p class="small" style="margin-bottom:22px;max-width:760px">Segédeszköz a tudatos játékhoz. Semmit nem küldünk el sehova, minden számítás a böngésződben fut. A tippek nem garantálnak nyereményt, a fogadás kockázattal jár. Ha úgy érzed, kicsúszik az irányítás, nézd meg a <a href="/felelos-jatek">Felelős játék</a> oldalt.</p>
+
+  <div class="g2 calc" style="align-items:start">
+    <div class="card" id="cStake">
+      <h2>Tét-javaslat</h2>
+      <p class="small">Add meg a bankrolled (a játékra szánt keret), a szorzót és azt, hogy szerinted hány százalék eséllyel jön be a tipp.</p>
+      <div class="g2">
+        <div><label for="sBank">Bankroll (Ft)</label><input id="sBank" inputmode="decimal" value="100000" autocomplete="off"></div>
+        <div><label for="sOdds">Szorzó</label><input id="sOdds" inputmode="decimal" value="1,90" autocomplete="off"></div>
+      </div>
+      <div class="g2">
+        <div><label for="sProb">Saját becsült esély (%)</label><input id="sProb" inputmode="decimal" value="58" autocomplete="off"></div>
+        <div><label for="sPct">Fix tét (a bankroll %-a)</label><input id="sPct" inputmode="decimal" value="2" autocomplete="off"></div>
+      </div>
+      <div class="cout" id="oStake" aria-live="polite"></div>
+    </div>
+
+    <div class="card" id="cOdds">
+      <h2>Szorzó ↔ valószínűség</h2>
+      <p class="small">A szorzóból kiszámolható, mekkora esélyt „árazott be” a fogadóiroda. Ha a te becslésed ennél magasabb, ott lehet érték.</p>
+      <div class="g2">
+        <div><label for="oOdds">Szorzó</label><input id="oOdds" inputmode="decimal" value="2,10" autocomplete="off"></div>
+        <div><label for="oPct">…vagy esély (%)</label><input id="oPct" inputmode="decimal" placeholder="pl. 47,6" autocomplete="off"></div>
+      </div>
+      <div class="cout" id="oConv" aria-live="polite"></div>
+      <h3 style="margin-top:20px">Iroda-árrés (margin)</h3>
+      <p class="small">Add meg egy mérkőzés összes kimenetelének szorzóját (pl. 1 – X – 2).</p>
+      <div class="g3">
+        <div><label for="mA">1</label><input id="mA" inputmode="decimal" value="2,10" autocomplete="off"></div>
+        <div><label for="mB">X</label><input id="mB" inputmode="decimal" value="3,40" autocomplete="off"></div>
+        <div><label for="mC">2</label><input id="mC" inputmode="decimal" value="3,50" autocomplete="off"></div>
+      </div>
+      <div class="cout" id="oMargin" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="g2 calc" style="align-items:start;margin-top:18px">
+    <div class="card" id="cCombo">
+      <h2>Kombi kalkulátor</h2>
+      <p class="small">Add meg a szelvényen lévő tippek szorzóit. A kombi csak akkor nyer, ha minden tipp bejön.</p>
+      <div id="cmList"></div>
+      <div class="row" style="margin:10px 0 14px"><button class="btn ghost sm" id="cmAdd" type="button">+ Tipp hozzáadása</button><button class="btn ghost sm" id="cmClr" type="button">Törlés</button></div>
+      <div class="g2"><div><label for="cmStake">Tét (Ft)</label><input id="cmStake" inputmode="decimal" value="5000" autocomplete="off"></div><div><label for="cmP">Egy tipp átlagos esélye (%) <span class="opt">(opc.)</span></label><input id="cmP" inputmode="decimal" placeholder="pl. 55" autocomplete="off"></div></div>
+      <div class="cout" id="oCombo" aria-live="polite"></div>
+    </div>
+
+    <div class="card" id="cBank">
+      <h2>Bankroll-napló</h2>
+      <p class="small">Vezesd a saját tétjeidet. A napló csak ezen az eszközön, a böngésződben tárolódik.</p>
+      <div class="g2">
+        <div><label for="bStart">Kezdő bankroll (Ft)</label><input id="bStart" inputmode="decimal" value="100000" autocomplete="off"></div>
+        <div><label for="bNote">Megjegyzés</label><input id="bNote" placeholder="pl. Fradi – Újpest, 1X" maxlength="60" autocomplete="off"></div>
+      </div>
+      <div class="g3">
+        <div><label for="bStake">Tét (Ft)</label><input id="bStake" inputmode="decimal" placeholder="2000" autocomplete="off"></div>
+        <div><label for="bOdds">Szorzó</label><input id="bOdds" inputmode="decimal" placeholder="1,85" autocomplete="off"></div>
+        <div><label for="bRes">Eredmény</label><select id="bRes"><option value="win">Nyert</option><option value="loss">Vesztett</option><option value="void">Érvénytelen</option></select></div>
+      </div>
+      <div class="row" style="margin:12px 0"><button class="btn sm" id="bAdd" type="button">Hozzáadás</button><button class="btn ghost sm" id="bCsv" type="button">⬇ CSV</button><button class="btn danger sm" id="bClr" type="button">Napló törlése</button></div>
+      <div class="cout" id="oBank" aria-live="polite"></div>
+      <div id="bList"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h2>Pár alapszabály</h2>
+    <ul class="rules">
+      <li><b>Külön keret.</b> Csak olyan pénzzel játssz, amire nincs szükséged a megélhetéshez, és amit el tudsz veszíteni.</li>
+      <li><b>Kicsi, egyenletes tétek.</b> A bankroll 1–3%-a tippenként a gyakori ökölszabály. A teljes Kelly-tét nagyon ingadozó, ezért sokan a felét vagy a negyedét használják.</li>
+      <li><b>Ne hajszold a veszteséget.</b> A vesztes sorozat után emelt tét a leggyakoribb út a nagyobb bajhoz.</li>
+      <li><b>A kombi szorzó csábít, de a valószínűség szorzódik.</b> Öt tipp 60%-os esélye együtt csak kb. 8%.</li>
+    </ul>
+  </div>
+</section>
+</main>
+<div id="ftr"></div>
+<script src="/assets/fx.js"></script>
+<script type="module" src="/js/app.js?v=20261031a"></script>
+<script src="/js/calc.js?v=20261031a" defer></script>
+</body>
+</html>
