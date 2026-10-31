@@ -157,7 +157,7 @@ const cnt = l => { let w = 0, n = 0, p = 0; l.forEach(t => { const s = effStatus
 /* vonaldiagram (mint a VIP-ben): napról napra összesített eltalált / nem talált tippek + találati arány */
 function tipChart(list) {
   const days = {}; list.forEach(t => { const s = effStatus(t); if (s !== 'win' && s !== 'loss') return; (days[t.date] = days[t.date] || { w: 0, x: 0 })[s === 'win' ? 'w' : 'x']++; });
-  const ds = Object.keys(days).sort(), box = h => `<div style="background:rgba(15,26,45,.78);border:1px solid rgba(168,85,247,.35);border-radius:16px;padding:16px 18px;margin:0 0 18px"><h3 style="font-size:1rem;margin:0 0 4px">Eltalált tippek alakulása</h3>${h}</div>`;
+  const ds = Object.keys(days).sort(), box = h => `<div style="background:rgba(15,26,45,.78);border:1px solid rgba(85,196,247,.35);border-radius:16px;padding:16px 18px;margin:0 0 18px"><h3 style="font-size:1rem;margin:0 0 4px">Eltalált tippek alakulása</h3>${h}</div>`;
   if (!ds.length) return box('<div style="color:#8497b4;padding:22px 0;text-align:center;font-size:.9rem">Még nincs lezárt tipp – amint lesz eredmény, itt jelenik meg a görbe.</div>');
   let W = 0, X = 0; const P = ds.map(d => { W += days[d].w; X += days[d].x; return { d, W, X, r: Math.round(W / (W + X) * 100) }; });
   const w = 640, h = 230, L = 34, R = 36, T = 12, B = 28, mx = Math.max(4, ...P.map(p => Math.max(p.W, p.X)));
@@ -168,18 +168,18 @@ function tipChart(list) {
   const grid = [0, .25, .5, .75, 1].map(k => `<line x1="${L}" x2="${w - R}" y1="${gy(k)}" y2="${gy(k)}" stroke="rgba(255,255,255,.07)"/><text style="${ax}" x="${L - 6}" y="${+gy(k) + 3}" text-anchor="end">${Math.round(mx * k)}</text><text style="${ax}" x="${w - R + 6}" y="${+gy(k) + 3}">${k * 100}%</text>`).join('');
   const step = Math.ceil(P.length / 7), xl = P.map((p, i) => i % step === 0 || i === P.length - 1 ? `<text style="${ax}" x="${nx(i).toFixed(1)}" y="${h - 8}" text-anchor="middle">${p.d.slice(5).replace('-', '.')}.</text>` : '').join('');
   const lg = (c, t) => `<span><i style="display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px;background:${c}"></i>${t}</span>`;
-  return box(`<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;color:#8497b4;margin:6px 0 4px">${lg('#4ade9a', 'Eltalált (db)')}${lg('#ff7b6b', 'Nem talált (db)')}${lg('#c08bff', 'Találati arány (%) – most <b style="color:#e9d5ff">' + P[P.length - 1].r + '%</b>')}</div>
+  return box(`<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;color:#8497b4;margin:6px 0 4px">${lg('#4ade9a', 'Eltalált (db)')}${lg('#ff7b6b', 'Nem talált (db)')}${lg('#8bddff', 'Találati arány (%) – most <b style="color:#d5f2ff">' + P[P.length - 1].r + '%</b>')}</div>
   <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;overflow:visible" role="img" aria-label="Eltalált tippek alakulása">${grid}${xl}
   <path d="${path(p => p.X, yc)}" fill="none" stroke="#ff7b6b" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
   <path d="${path(p => p.W, yc)}" fill="none" stroke="#4ade9a" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="${path(p => p.r, yp)}" fill="none" stroke="#c08bff" stroke-width="2.4" stroke-dasharray="6 5" stroke-linejoin="round" stroke-linecap="round"/>
-  ${dots(p => p.X, yc, '#ff7b6b', ' nem talált összesen')}${dots(p => p.W, yc, '#4ade9a', ' eltalált összesen')}${dots(p => p.r, yp, '#c08bff', '% találati arány')}</svg>`);
+  <path d="${path(p => p.r, yp)}" fill="none" stroke="#8bddff" stroke-width="2.4" stroke-dasharray="6 5" stroke-linejoin="round" stroke-linecap="round"/>
+  ${dots(p => p.X, yc, '#ff7b6b', ' nem talált összesen')}${dots(p => p.W, yc, '#4ade9a', ' eltalált összesen')}${dots(p => p.r, yp, '#8bddff', '% találati arány')}</svg>`);
 }
 /* profitgörbe: napról napra összegzett eredmény 1 egységes téttel (csak a szorzóval rendelkező, lezárt tippek) */
 function equityChart(list) {
   const days = {}; let n = 0;
   list.forEach(t => { const s = effStatus(t), o = Number(t.odds); if (!(o > 1) || (s !== 'win' && s !== 'loss')) return; n++; days[t.date] = (days[t.date] || 0) + (s === 'win' ? o - 1 : -1); });
-  const box = h => `<div style="background:rgba(15,26,45,.78);border:1px solid rgba(168,85,247,.35);border-radius:16px;padding:16px 18px;margin:0 0 18px"><h3 style="font-size:1rem;margin:0 0 4px">Profitgörbe <span style="font-weight:500;color:#8497b4;font-size:.8rem">(1 egységes tét, egység)</span></h3>${h}</div>`;
+  const box = h => `<div style="background:rgba(15,26,45,.78);border:1px solid rgba(85,196,247,.35);border-radius:16px;padding:16px 18px;margin:0 0 18px"><h3 style="font-size:1rem;margin:0 0 4px">Profitgörbe <span style="font-weight:500;color:#8497b4;font-size:.8rem">(1 egységes tét, egység)</span></h3>${h}</div>`;
   const ds = Object.keys(days).sort();
   if (!ds.length) return box('<div style="color:#8497b4;padding:22px 0;text-align:center;font-size:.9rem">Még nincs szorzóval rendelkező, lezárt tipp – amint lesz, itt jelenik meg a profitgörbe.</div>');
   let c = 0; const P = ds.map(d => { c += days[d]; return { d, c: Math.round(c * 100) / 100 }; });
@@ -258,14 +258,14 @@ function statCss() {
   st.textContent = `
 #statBox{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:0 0 14px;text-align:left}
 .vgs{position:relative;overflow:hidden;min-width:0;padding:24px 24px 18px;border-radius:20px;border:1px solid rgba(148,163,184,.16);background:linear-gradient(180deg,rgba(17,24,39,.88),rgba(10,14,24,.94));box-shadow:0 24px 60px -30px #000;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.vgs::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,#a855f7,transparent)}
+.vgs::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,#55c4f7,transparent)}
 .vgs-x{grid-column:1/-1;text-align:center;padding:30px 20px}.vgs-x .big{font-size:2rem}.vgs-x p{margin:8px 0 0;color:#94a3b8}
 .vgs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px}
-.vgs-h span{font-weight:800;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;color:#d9b8ff}
+.vgs-h span{font-weight:800;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;color:#b8eaff}
 .vgs-h small{font-size:.8rem;color:#94a3b8;font-weight:600}
 .vgs-main{display:flex;align-items:flex-end;gap:16px;margin:16px 0 14px}
-.vgs-pct{font-size:3.6rem;line-height:.9;font-weight:800;letter-spacing:-.04em;color:#d9b8ff;font-variant-numeric:tabular-nums}
-.vgs-pct i{font-style:normal;font-size:1.7rem;margin-left:2px;color:#a855f7}
+.vgs-pct{font-size:3.6rem;line-height:.9;font-weight:800;letter-spacing:-.04em;color:#b8eaff;font-variant-numeric:tabular-nums}
+.vgs-pct i{font-style:normal;font-size:1.7rem;margin-left:2px;color:#55c4f7}
 .vgs-lab{padding-bottom:3px;display:flex;flex-direction:column;gap:2px}
 .vgs-lab b{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:#e2e8f0}
 .vgs-lab span{font-size:.82rem;color:#94a3b8}
@@ -278,7 +278,7 @@ function statCss() {
 .vgs-c.w{border-color:rgba(45,212,160,.4);background:rgba(45,212,160,.07)}.vgs-c.w b{color:#2dd4a0}
 .vgs-c.l{border-color:rgba(251,90,110,.4);background:rgba(251,90,110,.07)}.vgs-c.l b{color:#fb5a6e}
 .vgs-cmp{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:14px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.03);font-size:.86rem;color:#94a3b8}
-.vgs-cmp b{color:#d9b8ff;font-size:1rem}.vgs-cmp em{font-style:normal;color:#94a3b8}
+.vgs-cmp b{color:#b8eaff;font-size:1rem}.vgs-cmp em{font-style:normal;color:#94a3b8}
 .vgs-cmp i{font-style:normal;font-weight:800;margin-left:auto}.vgs-cmp i.up{color:#2dd4a0}.vgs-cmp i.dn{color:#fb5a6e}.vgs-cmp i.eq{color:#94a3b8}
 .vgs-tot{margin:10px 2px 0;font-size:.78rem;color:#64748b}
 .vgs-sp{margin-top:14px;padding-top:6px;border-top:1px solid rgba(148,163,184,.14)}
@@ -287,7 +287,7 @@ function statCss() {
 .vgs-r .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vgs-r .m{height:5px;border-radius:5px;background:rgba(148,163,184,.16);overflow:hidden}.vgs-r .m u{display:block;height:100%;background:#2dd4a0;border-radius:5px}
 .vgs-r .s{text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;white-space:nowrap}
-.vgs-r b{text-align:right;color:#d9b8ff;font-variant-numeric:tabular-nums}
+.vgs-r b{text-align:right;color:#b8eaff;font-variant-numeric:tabular-nums}
 @media(max-width:760px){#statBox{grid-template-columns:minmax(0,1fr)}.vgs{padding:20px 18px 14px}.vgs-pct{font-size:3rem}}`;
   document.head.appendChild(st);
 }
@@ -813,10 +813,10 @@ function dmCss() {
   const s = document.createElement('style'); s.id = 'dm-css';
   s.textContent = `.dm-msgs{display:flex;flex-direction:column;gap:8px;max-height:380px;overflow:auto;padding:4px 2px;margin-bottom:12px}
 .dm-b{max-width:85%;padding:9px 13px;border-radius:14px;background:rgba(148,163,184,.14);align-self:flex-start;white-space:pre-wrap;word-break:break-word;line-height:1.4}
-.dm-b.me{align-self:flex-end;background:rgba(168,85,247,.28)}.dm-b small{display:block;margin-top:4px;font-size:.7rem;opacity:.65}
+.dm-b.me{align-self:flex-end;background:rgba(85,196,247,.28)}.dm-b small{display:block;margin-top:4px;font-size:.7rem;opacity:.65}
 .dm-wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px}.dm-list{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto}
 .dm-u{text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:rgba(255,255,255,.03);color:var(--tx);cursor:pointer;font:inherit}
-.dm-u.on{border-color:#a855f7;background:rgba(168,85,247,.14)}.dm-u b{display:block}.dm-u small{display:block;color:var(--mu);font-size:.78rem;margin-top:2px}
+.dm-u.on{border-color:#55c4f7;background:rgba(85,196,247,.14)}.dm-u b{display:block}.dm-u small{display:block;color:var(--mu);font-size:.78rem;margin-top:2px}
 .dm-new{display:inline-block;margin-top:3px;padding:1px 8px;border-radius:99px;font-size:.66rem;font-weight:800;background:rgba(255,84,104,.2);color:#ff8f9d}
 @media(max-width:760px){.dm-wrap{grid-template-columns:1fr}.dm-list{max-height:200px}}`;
   document.head.appendChild(s);
@@ -911,7 +911,7 @@ function settingsPage() {
   root.innerHTML = `<section class="wrap" style="padding-top:26px"><h1>Beállítások</h1>
   <div class="card" id="picCard"><h2>Profilkép</h2>
     <div class="row" style="gap:18px;align-items:center">
-      <div id="picPrev" style="flex:none;width:96px;height:96px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:800;font-size:2.2rem;color:#ffffff;background:linear-gradient(135deg,#d9b8ff,#7c3aed);border:2px solid rgba(168,85,247,.5)"></div>
+      <div id="picPrev" style="flex:none;width:96px;height:96px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:800;font-size:2.2rem;color:#ffffff;background:linear-gradient(135deg,#b8eaff,#3abded);border:2px solid rgba(85,196,247,.5)"></div>
       <div style="flex:1;min-width:220px"><p class="small" style="margin:0 0 10px">Ezt a képet látja mindenki a chatben, a tagok listáján és a kezdőlapon. Bármilyen képet választhatsz, a közepét négyzetre vágjuk és lekicsinyítjük.</p>
       <div class="row"><label class="btn sm ghost" for="picFile" style="margin:0;cursor:pointer">Kép kiválasztása</label><input id="picFile" type="file" accept="image/*" hidden>
       <button class="btn sm" id="picSave" type="button" disabled>Mentés</button><button class="btn sm danger" id="picDel" type="button">Eltávolítás</button></div></div></div></div>
