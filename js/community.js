@@ -1,385 +1,158 @@
-/* VikingGOLD – Közösség modul: Updates (fejlesztési napló) + Chat (Discord-stílus)
-   Az app.js tölti be, csak az /updates és /chat oldalakon. */
-import {
-  collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot,
-  query, orderBy, where, limit, serverTimestamp, arrayUnion, arrayRemove
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+/* VikingGOLD – Updates + Chat stílusok (az style.css mellé, csak ezen a két oldalon töltődik be) */
 
-const URL_RE = /(https?:\/\/[^\s<>"']+)/g;
-const pad2 = n => String(n).padStart(2, '0');
-const hhmm = t => { const d = new Date(t); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
+/* ---------- UPDATES ---------- */
+.upd{padding-top:30px;padding-bottom:30px}
+.upd-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.upd-head .eyebrow{margin-bottom:14px}
+.upd-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.utag{font:inherit;font-weight:700;font-size:.85rem;padding:8px 16px;border-radius:999px;border:1px solid var(--bd2);background:rgba(255,255,255,.04);color:var(--mu);cursor:pointer;transition:.2s}
+.utag:hover{color:var(--tx);border-color:rgba(85,196,247,.5)}
+.utag.on{color:#ffffff;background:linear-gradient(135deg,#b8eaff,#55c4f7 55%,#55c4f7);border-color:transparent}
+.upd-form{margin-bottom:26px}
+.upd-form .chk{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:.9rem;color:var(--tx);cursor:pointer}
+.upd-form .chk input{width:18px;height:18px;padding:0}
+.upd-form code{background:var(--in);border:1px solid var(--bd);border-radius:6px;padding:1px 6px;font-size:.82rem;color:var(--gold2)}
+.upd-tl{position:relative;padding-left:30px}
+.upd-tl::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,rgba(85,196,247,.6),rgba(85,196,247,.05));border-radius:2px}
+.upd-c{position:relative;margin-bottom:18px;padding:22px 24px;border-radius:18px;background:var(--glass,linear-gradient(180deg,rgba(17,24,39,.85),rgba(10,14,24,.92)));border:1px solid var(--bd);box-shadow:0 20px 50px -28px #000}
+.upd-c.pin{border-color:rgba(85,196,247,.4);box-shadow:0 20px 50px -28px #000,0 0 40px -18px rgba(85,196,247,.5)}
+.upd-dot{position:absolute;left:-29px;top:28px;width:16px;height:16px;border-radius:50%;background:var(--bg);border:3px solid var(--gold);box-shadow:0 0 14px rgba(85,196,247,.55)}
+.upd-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:10px}
+.upd-meta time{margin-left:auto;color:var(--mu);font-size:.82rem;font-weight:600}
+.tag{display:inline-block;padding:4px 11px;border-radius:999px;font-size:.7rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border:1px solid}
+.t-new{color:#86efac;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4)}
+.t-imp{color:var(--gold2);background:rgba(85,196,247,.1);border-color:rgba(85,196,247,.4)}
+.t-fix{color:#7dd3fc;background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.4)}
+.t-ann{color:#b4e7fe;background:rgba(85,196,247,.12);border-color:rgba(85,196,247,.4)}
+.ver{font-size:.78rem;font-weight:700;color:var(--mu);padding:3px 9px;border-radius:8px;background:var(--in);border:1px solid var(--bd)}
+.pinb{font-size:.78rem;font-weight:700;color:var(--gold2)}
+.newb{font-style:normal;font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#fff;background:linear-gradient(120deg,#be123c,#ff5468);padding:3px 8px;border-radius:999px}
+.upd-c h2{font-size:1.3rem;margin:0 0 8px;letter-spacing:-.01em}
+.upd-b p{margin:0 0 6px;color:#c9cfdd}
+.upd-b h3{margin:14px 0 6px;font-size:1rem;color:var(--gold2)}
+.upd-b ul{margin:4px 0 8px 20px;color:#c9cfdd}.upd-b li{margin-bottom:4px}
+.upd-b .gap{height:8px}
+.upd-b a{text-decoration:underline;text-underline-offset:2px}
+.upd-f{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)}
+.upd-adm{display:flex;gap:8px}
+.upd-empty{text-align:center;padding:50px 20px;color:var(--mu);border:1px dashed var(--bd2);border-radius:16px}
+@media(max-width:640px){.upd-c{padding:18px}.upd-meta time{margin-left:0;width:100%}}
 
-/* ============================================================
-   UPDATES
-   ============================================================ */
-const TAGS = {
-  new: ['Új funkció', 't-new'],
-  imp: ['Fejlesztés', 't-imp'],
-  fix: ['Javítás', 't-fix'],
-  ann: ['Bejelentés', 't-ann']
-};
+/* ---------- CHAT ---------- */
+.chat-wrap{padding-top:18px;padding-bottom:18px}
+.dc{display:grid;grid-template-columns:230px minmax(0,1fr) 220px;height:calc(100dvh - 130px);min-height:520px;border:1px solid var(--bd);border-radius:20px;overflow:hidden;background:rgba(8,11,19,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 30px 70px -30px #000;position:relative}
+.dc button{font-family:inherit}
+.dc-side{display:flex;flex-direction:column;background:rgba(5,7,13,.6);border-right:1px solid var(--bd);min-height:0}
+.dc-h{padding:16px 16px 12px;font-weight:800;letter-spacing:-.01em;border-bottom:1px solid var(--bd)}
+.dc-ch{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow:auto}
+.dc-chb{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border:0;border-radius:9px;background:none;color:var(--mu);font-weight:600;font-size:.92rem;text-align:left;cursor:pointer;transition:.15s}
+.dc-chb:hover{background:rgba(255,255,255,.05);color:var(--tx)}
+.dc-chb.on{background:rgba(85,196,247,.12);color:var(--gold2);box-shadow:inset 0 0 0 1px rgba(85,196,247,.25)}
+.dc-me{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--bd);background:rgba(0,0,0,.25)}
+.dc-me b{display:block;font-size:.9rem;line-height:1.2}.dc-me small{color:#ff5468;font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}
+.av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:1rem;color:#fff;user-select:none}
+.dc-me .av{width:34px;height:34px}
 
-export function updatesPage(c) {
-  const { db, esc, $, huDate, ymd, toast, isAdmin: admin } = c;
-  const root = $('#main');
-  const seenBefore = +localStorage.getItem('vg_upd_seen') || 0;
-  let items = [], lim = 15, filter = 'all', editId = null, formOpen = false, unsub = null, maxCreated = 0;
+.dc-main{display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
+.dc-top{display:flex;align-items:center;gap:12px;padding:0 16px;height:52px;border-bottom:1px solid var(--bd);flex:none}
+.dc-top b{font-size:1rem}.dc-desc{color:var(--mu);font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.dc-ic{background:none;border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:6px 11px;cursor:pointer;font-size:.9rem;flex:none}
+.dc-ic:hover{border-color:var(--gold)}.dc-ic:disabled{opacity:.4;cursor:not-allowed}
+.dc-pin{display:flex;gap:10px;align-items:center;padding:8px 16px;font-size:.84rem;color:#c3c8d6;background:rgba(85,196,247,.07);border-bottom:1px solid rgba(85,196,247,.2);cursor:pointer;flex:none}
+.dc-pin div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.dc-msgs{flex:1;overflow-y:auto;padding:10px 0 8px;min-height:0;overscroll-behavior:contain;scroll-behavior:auto}
+.dc-msgs::-webkit-scrollbar,.dc-mem::-webkit-scrollbar{width:8px}.dc-msgs::-webkit-scrollbar-thumb,.dc-mem::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+.dc-empty{text-align:center;color:var(--mu);padding:60px 20px;line-height:1.7}.dc-empty .big{font-size:2.4rem}
+.dc-more{display:block;margin:6px auto 12px;background:rgba(255,255,255,.05);border:1px solid var(--bd2);color:var(--tx);padding:7px 16px;border-radius:999px;font-size:.82rem;font-weight:600;cursor:pointer}
+.dc-more:hover{border-color:var(--gold);color:var(--gold)}
+.dc-day{display:flex;align-items:center;gap:12px;margin:14px 16px 6px;color:var(--mu2);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.dc-day::before,.dc-day::after{content:"";flex:1;height:1px;background:var(--bd)}
 
-  const inline = s => String(s).split(URL_RE).map((p, i) => i % 2
-    ? `<a href="${esc(p)}" target="_blank" rel="noopener noreferrer nofollow">${esc(p)}</a>`
-    : esc(p).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')).join('');
-  function fmtBody(t) {
-    let out = '', list = false;
-    String(t || '').split('\n').forEach(l => {
-      const m = l.match(/^\s*[-*•]\s+(.*)/);
-      if (m) { if (!list) { out += '<ul>'; list = true; } out += '<li>' + inline(m[1]) + '</li>'; return; }
-      if (list) { out += '</ul>'; list = false; }
-      if (/^##\s+/.test(l)) out += '<h3>' + inline(l.replace(/^##\s+/, '')) + '</h3>';
-      else if (!l.trim()) out += '<div class="gap"></div>';
-      else out += '<p>' + inline(l) + '</p>';
-    });
-    return out + (list ? '</ul>' : '');
-  }
+.dc-m{position:relative;display:flex;gap:12px;padding:3px 18px 3px 16px;margin-top:10px;transition:background .15s}
+.dc-m.grp{margin-top:0}
+.dc-m:hover,.dc-m.sel{background:rgba(255,255,255,.035)}
+.dc-m.ment{background:rgba(85,196,247,.07);box-shadow:inset 3px 0 0 var(--gold)}
+.dc-m.flash{animation:dcf 1.6s}
+@keyframes dcf{0%,60%{background:rgba(85,196,247,.2)}100%{background:transparent}}
+.dc-gt{flex:none;width:38px;text-align:right;font-size:.64rem;color:transparent;padding-top:5px}
+.dc-m.grp:hover .dc-gt{color:var(--mu2)}
+.dc-b{min-width:0;flex:1}
+.dc-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dc-hd .nm{font-size:.95rem}.dc-hd .nm.adm{color:#ff6b7d}
+.dc-hd time{font-size:.72rem;color:var(--mu2)}
+.bdg{font-style:normal;font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;color:#fff;background:linear-gradient(135deg,#ff5468,#be123c);align-self:center;box-shadow:0 0 10px rgba(255,84,104,.45)}
+.dc-tx{color:#d7dbe6;font-size:.94rem;line-height:1.5;word-break:break-word;overflow-wrap:anywhere}
+.dc-tx a{text-decoration:underline;text-underline-offset:2px}
+.dc-tx .ed,.ed{color:var(--mu2);font-size:.7rem}
+.mn{background:rgba(99,102,241,.22);color:#c7d2fe;border-radius:5px;padding:0 4px;font-weight:600}.mn.me{background:rgba(85,196,247,.25);color:var(--gold2)}
+.dc-rq{display:block;margin:2px 0 4px;padding:3px 10px;border-left:3px solid var(--bd2);color:var(--mu);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;max-width:100%}
+.dc-rq b{color:#c3c8d6}
+.dc-rx{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.rx{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;border:1px solid var(--bd2);background:rgba(255,255,255,.04);color:var(--tx);font-size:.82rem;cursor:pointer}
+.rx b{font-size:.76rem;color:var(--mu)}.rx.on{border-color:rgba(85,196,247,.6);background:rgba(85,196,247,.12)}.rx.on b{color:var(--gold2)}
+.dc-act{position:absolute;right:14px;top:-14px;display:none;align-items:center;gap:1px;padding:3px;background:var(--sf2,#141822);border:1px solid var(--bd2);border-radius:10px;box-shadow:0 8px 24px -8px #000;z-index:3}
+.dc-m:hover .dc-act,.dc-m.sel .dc-act{display:flex}
+.dc-act button{background:none;border:0;border-radius:7px;padding:4px 7px;cursor:pointer;font-size:.9rem;color:var(--tx)}
+.dc-act button:hover{background:rgba(255,255,255,.1)}.dc-act i{width:1px;height:16px;background:var(--bd2);margin:0 3px}
+.dc-edit textarea{min-height:60px;resize:vertical;margin-bottom:8px}.dc-edit small{color:var(--mu2)}
 
-  root.innerHTML = `<section class="wrap upd">
-    <div class="upd-head"><div><span class="eyebrow">Fejlesztési napló</span><h1>Updates</h1>
-    <p class="small" style="max-width:560px">Itt követheted, mi változott a VikingGOLD oldalon: új funkciók, javítások és bejelentések, dátummal.</p></div>
-    ${admin ? '<button class="btn" id="uNew">+ Új bejegyzés</button>' : ''}</div>
-    <div class="upd-tags" id="uTags"></div>
-    <div id="uForm"></div>
-    <div id="uList"><div class="upd-empty">Betöltés…</div></div>
-    <div class="center" style="margin:10px 0 30px"><button class="btn ghost" id="uMore" hidden>Régebbi bejegyzések</button></div>
-  </section>`;
+.dc-new{position:absolute;left:50%;bottom:78px;transform:translateX(-50%);z-index:4;background:linear-gradient(135deg,#b8eaff,#55c4f7);color:#ffffff;border:0;padding:8px 18px;border-radius:999px;font-weight:800;font-size:.84rem;cursor:pointer;box-shadow:0 10px 30px -8px rgba(85,196,247,.7)}
+.dc-reply{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 16px;font-size:.82rem;color:var(--mu);background:rgba(255,255,255,.04);border-top:1px solid var(--bd);flex:none}
+.dc-reply span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dc-reply b{color:var(--tx)}
+.dc-reply button{background:none;border:0;color:var(--mu);cursor:pointer;font-size:1rem}
+.dc-compw{padding:10px 14px 14px;flex:none;position:relative}
+.dc-comp{display:flex;align-items:flex-end;gap:8px;padding:8px;border-radius:14px;background:var(--in);border:1px solid var(--bd2);position:relative}
+.dc-comp:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(85,196,247,.12)}
+.dc-comp textarea{flex:1;border:0;background:transparent;box-shadow:none!important;resize:none;padding:8px 6px;max-height:140px;min-height:38px;line-height:1.4}
+.dc-comp .dc-ic{border:0;font-size:1.2rem;padding:6px 8px}
+.dc-emo{position:absolute;left:0;bottom:calc(100% + 8px);width:min(320px,100%);display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:8px;background:var(--sf2,#141822);border:1px solid var(--bd2);border-radius:14px;box-shadow:0 18px 40px -12px #000;z-index:5}
+.dc-emo[hidden]{display:none}
+.dc-emo button{background:none;border:0;border-radius:8px;font-size:1.2rem;padding:5px 0;cursor:pointer}.dc-emo button:hover{background:rgba(255,255,255,.1)}
 
-  function tagsBar() {
-    $('#uTags').innerHTML = [['all', 'Összes'], ...Object.entries(TAGS).map(([k, v]) => [k, v[0]])]
-      .map(([k, l]) => `<button class="utag ${filter === k ? 'on' : ''}" data-f="${k}">${l}</button>`).join('');
-    $('#uTags').querySelectorAll('[data-f]').forEach(b => b.onclick = () => { filter = b.dataset.f; tagsBar(); list(); });
-  }
+.dc-mem{border-left:1px solid var(--bd);background:rgba(5,7,13,.6);overflow-y:auto;padding:10px 8px;min-height:0}
+.mg{padding:12px 10px 5px;font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--mu2)}
+.mb{display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:9px;font-size:.88rem;font-weight:600;min-width:0}
+.mb:hover{background:rgba(255,255,255,.05)}.mb.off{opacity:.45}
+.mb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}.mb span.adm{color:#ff6b7d}
+.avw{position:relative;flex:none}.mb .av{width:30px;height:30px;font-size:.85rem}
+.st{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;background:#4b5368;border:2px solid #0a0d15}.st.on{background:var(--ok)}
+.mbx{background:none;border:1px solid var(--bd2);color:var(--mu);border-radius:7px;font-size:.7rem;padding:2px 6px;cursor:pointer;display:none}
+.mb:hover .mbx{display:inline-block}.mbx:hover{color:var(--gold);border-color:var(--gold)}
+.mb em{font-style:normal}
 
-  function form() {
-    const box = $('#uForm');
-    if (!admin || !formOpen) { box.innerHTML = ''; return; }
-    const cur = editId ? items.find(x => x.id === editId) : null;
-    const v = cur || { title: '', body: '', tag: 'new', date: ymd(new Date()), ver: '', pinned: false };
-    box.innerHTML = `<div class="card upd-form"><h2>${cur ? 'Bejegyzés szerkesztése' : 'Új bejegyzés'}</h2>
-      <div class="g2"><div><label>Cím</label><input id="u_t" maxlength="120" value="${esc(v.title)}" placeholder="pl. Megérkezett a Chat"></div>
-      <div><label>Verzió <span class="opt">(nem kötelező)</span></label><input id="u_v" maxlength="20" value="${esc(v.ver || '')}" placeholder="pl. 1.4"></div></div>
-      <div class="g2"><div><label>Típus</label><select id="u_g">${Object.entries(TAGS).map(([k, t]) => `<option value="${k}" ${v.tag === k ? 'selected' : ''}>${t[0]}</option>`).join('')}</select></div>
-      <div><label>Dátum</label><input id="u_d" type="date" value="${esc(v.date)}"></div></div>
-      <label>Leírás</label><textarea id="u_b" rows="8" maxlength="4000" placeholder="Írd le, mi változott…">${esc(v.body)}</textarea>
-      <p class="small" style="margin:6px 0 0">Formázás: <code>- </code> felsorolás, <code>## </code> alcím, <code>**félkövér**</code>, linkek automatikusan kattinthatók.</p>
-      <label class="chk"><input type="checkbox" id="u_p" ${v.pinned ? 'checked' : ''}> Kitűzés (mindig legfelül marad)</label>
-      <div class="row" style="margin-top:16px"><button class="btn" id="u_s">${cur ? 'Mentés' : 'Közzététel'}</button><button class="btn ghost" id="u_c">Mégse</button></div></div>`;
-    $('#u_c').onclick = () => { formOpen = false; editId = null; form(); };
-    $('#u_s').onclick = async e => {
-      const title = $('#u_t').value.trim(), body = $('#u_b').value.trim(), date = $('#u_d').value;
-      if (title.length < 3) { toast('Adj meg egy címet.', 'err'); return; }
-      if (body.length < 3) { toast('A leírás túl rövid.', 'err'); return; }
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { toast('Válassz dátumot.', 'err'); return; }
-      const data = { title: title.slice(0, 120), body: body.slice(0, 4000), tag: $('#u_g').value, date, ver: $('#u_v').value.trim().slice(0, 20), pinned: $('#u_p').checked };
-      e.target.disabled = true;
-      try {
-        if (cur) await updateDoc(doc(db, 'updates', cur.id), { ...data, edited: Date.now() });
-        else await addDoc(collection(db, 'updates'), { ...data, created: Date.now(), author: c.profile.name || 'Admin', authorUid: c.user.uid });
-        formOpen = false; editId = null; form(); toast(cur ? 'Bejegyzés mentve.' : 'Bejegyzés közzétéve.');
-      } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); e.target.disabled = false; }
-    };
-    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+.dc-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:20px}
+.dc-mc{width:min(380px,100%);padding:24px;border-radius:18px;background:var(--sf2,#141822);border:1px solid var(--bd2);box-shadow:0 30px 80px -20px #000}
+.dc-mc h3{font-size:1.1rem;margin-bottom:6px}
 
-  function list() {
-    const L = $('#uList');
-    let rows = items.filter(x => filter === 'all' || x.tag === filter);
-    rows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.date).localeCompare(String(a.date)) || (b.created || 0) - (a.created || 0));
-    if (!rows.length) { L.innerHTML = `<div class="upd-empty">${items.length ? 'Ebben a kategóriában még nincs bejegyzés.' : 'Még nincs bejegyzés.' + (admin ? ' Az „Új bejegyzés” gombbal írhatsz az elsőt.' : '')}</div>`; return; }
-    L.innerHTML = `<div class="upd-tl">${rows.map(x => {
-      const t = TAGS[x.tag] || TAGS.imp, isNew = (x.created || 0) > seenBefore;
-      return `<article class="upd-c ${x.pinned ? 'pin' : ''}" id="u_${x.id}">
-        <span class="upd-dot"></span>
-        <div class="upd-meta"><span class="tag ${t[1]}">${t[0]}</span>${x.ver ? `<span class="ver">v${esc(x.ver)}</span>` : ''}${x.pinned ? '<span class="pinb">📌 Kitűzve</span>' : ''}${isNew ? '<i class="newb">ÚJ</i>' : ''}<time>${esc(huDate(x.date))}</time></div>
-        <h2>${esc(x.title)}</h2><div class="upd-b">${fmtBody(x.body)}</div>
-        <div class="upd-f"><span class="small">${esc(x.author || 'Admin')}${x.edited ? ' · szerkesztve' : ''}</span>
-        ${admin ? `<span class="upd-adm"><button class="btn sm ghost" data-e="${x.id}">Szerkesztés</button><button class="btn sm danger" data-d="${x.id}">Törlés</button></span>` : ''}</div></article>`;
-    }).join('')}</div>`;
-    L.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { editId = b.dataset.e; formOpen = true; form(); });
-    L.querySelectorAll('[data-d]').forEach(b => b.onclick = async () => {
-      if (!confirm('Biztosan törlöd ezt a bejegyzést?')) return;
-      try { await deleteDoc(doc(db, 'updates', b.dataset.d)); toast('Bejegyzés törölve.'); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
-    });
-  }
-
-  function sub() {
-    if (unsub) unsub();
-    unsub = onSnapshot(query(collection(db, 'updates'), orderBy('date', 'desc'), limit(lim)), sn => {
-      items = sn.docs.map(d => ({ id: d.id, ...d.data() }));
-      $('#uMore').hidden = sn.size < lim;
-      items.forEach(x => { if ((x.created || 0) > maxCreated) maxCreated = x.created; });
-      list();
-      if (maxCreated) localStorage.setItem('vg_upd_seen', Math.max(maxCreated, +localStorage.getItem('vg_upd_seen') || 0));
-      window.dispatchEvent(new Event('vg-read'));
-    }, e => { $('#uList').innerHTML = `<div class="upd-empty">A bejegyzések nem tölthetők be: ${esc(e.code || e.message)}</div>`; });
-  }
-  $('#uMore').onclick = () => { lim += 15; sub(); };
-  if (admin) $('#uNew').onclick = () => { editId = null; formOpen = true; form(); };
-  tagsBar(); sub();
+@media(max-width:1000px){
+  .dc{grid-template-columns:200px minmax(0,1fr)}
+  .dc-mem{position:absolute;right:0;top:52px;bottom:0;width:230px;z-index:6;display:none;box-shadow:-20px 0 40px -20px #000;background:rgba(8,11,19,.97)}
+  .dc.mem-open .dc-mem{display:block}
 }
-
-/* ============================================================
-   CHAT
-   ============================================================ */
-const ROOMS = [
-  ['altalanos', 'általános', '💬', 'Beszélgess a közösséggel'],
-  ['tippek', 'tipp-beszélgetés', '🎯', 'Tippek, meccsek, elemzések'],
-  ['bejelentesek', 'bejelentések', '📢', 'Csak adminok írhatnak ide', true],
-  ['offtopic', 'offtopic', '🎲', 'Bármi, ami nem a tippekről szól']
-];
-const RX = [['up', '👍'], ['fire', '🔥'], ['heart', '❤️'], ['laugh', '😂'], ['win', '✅']];
-const EMOJIS = ['😀', '😂', '🤣', '😉', '😎', '🤔', '😅', '🙌', '👏', '👍', '🔥', '💰', '🏆', '⚽', '🏒', '🎾', '🏀', '🤾', '✅', '❌', '🍀', '💪', '😭', '😡'];
-
-export function chatPage(c) {
-  const { db, user, profile, esc, $, huDate, ymd, toast } = c;
-  const root = $('#main');
-  const g = c.gate(); if (g) { root.innerHTML = g; c.gateEvents(); return; }
-  const admin = c.isAdmin;
-  const me = { uid: user.uid, name: (profile && profile.name) || user.displayName || user.email.split('@')[0] };
-  const hashRoom = (location.hash || '').slice(1), saved = localStorage.getItem('vg_room');
-  let room = [hashRoom, saved].find(r => ROOMS.some(x => x[0] === r)) || 'altalanos';
-  let lim = 40, msgs = [], unsub = null, hasMore = false, replyTo = null, editing = null, editDraft = '';
-  let adminUids = new Set(admin ? [me.uid] : []), mutes = {}, myMute = 0, users = [], pres = {};
-  let stick = true, lastSend = 0, lastTopId = null, sending = false;
-
-  const isAdm = (uid, name) => adminUids.has(uid) || (name && c.adminName(name));
-  const col = n => { let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h},58%,52%)`; };
-  const uMap = {};
-  const picOf = uid => { const a = uid === me.uid ? (uMap[uid] && uMap[uid].avatar) || profile.avatar : uMap[uid] && uMap[uid].avatar; return typeof a === 'string' && a.startsWith('data:image/') ? a : ''; };
-  const av = (n, adm, uid) => { const p = picOf(uid); return p ? `<div class="av pic"><img src="${p}" alt="" loading="lazy"></div>` : `<div class="av" style="background:${adm ? 'linear-gradient(135deg,#ff6b7d,#be123c)' : col(n)};${adm ? 'color:#fff' : ''}">${esc(String(n).replace(/^[_.\-]+/, '').charAt(0).toUpperCase() || '?')}</div>`; };
-  const roomOf = k => ROOMS.find(r => r[0] === k);
-  const dayLabel = d => { const t = ymd(new Date()), y = ymd(new Date(Date.now() - 864e5)); return d === t ? 'Ma' : d === y ? 'Tegnap' : huDate(d); };
-  const fmt = t => String(t).split(URL_RE).map((p, i) => i % 2
-    ? `<a href="${esc(p)}" target="_blank" rel="noopener noreferrer nofollow">${esc(p)}</a>`
-    : esc(p).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^\w@])@([A-Za-z0-9_.\-]{3,20})/g, (m, a, n) => `${a}<span class="mn ${n.toLowerCase() === me.name.toLowerCase() ? 'me' : ''}">@${n}</span>`)
-  ).join('').replace(/\n/g, '<br>');
-  const blockedReason = () => {
-    const r = roomOf(room);
-    if (r[4] && !admin) return 'Ebbe a csatornába csak adminok írhatnak.';
-    if (myMute > Date.now()) return myMute > 8e15 ? 'Az admin végleg némított, nem írhatsz üzenetet.' : 'Némítva vagy eddig: ' + new Date(myMute).toLocaleString('hu-HU');
-    return '';
-  };
-
-  root.innerHTML = `<section class="wrap chat-wrap"><div class="dc" id="dc">
-    <aside class="dc-side">
-      <div class="dc-h">VikingGOLD közösség</div>
-      <div class="dc-ch" id="chList"></div>
-      <div class="dc-me">${av(me.name, admin, me.uid)}<div><b>${esc(me.name)}</b><small>${admin ? 'Admin' : 'Tag'}</small></div></div>
-    </aside>
-    <div class="dc-main">
-      <div class="dc-top"><b id="chName"></b><span class="dc-desc" id="chDesc"></span><button class="dc-ic" id="mbBtn" aria-label="Tagok" title="Tagok">👥 <span id="onCnt"></span></button></div>
-      <div class="dc-pin" id="pinBar" hidden></div>
-      <div class="dc-msgs" id="msgs"></div>
-      <button class="dc-new" id="newBtn" hidden>Új üzenetek ↓</button>
-      <div class="dc-reply" id="replyBar" hidden></div>
-      <div class="dc-compw"><form class="dc-comp" id="comp" autocomplete="off">
-        <button type="button" class="dc-ic" id="emBtn" aria-label="Emoji">😊</button>
-        <textarea id="ta" rows="1" maxlength="1000" placeholder=""></textarea>
-        <button class="btn sm" type="submit" id="sendBtn">Küldés</button>
-        <div class="dc-emo" id="emoBox" hidden>${EMOJIS.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('')}</div>
-      </form></div>
-    </div>
-    <aside class="dc-mem" id="mem"></aside>
-  </div></section>`;
-
-  /* ---- csatornák ---- */
-  function chList() {
-    $('#chList').innerHTML = ROOMS.map(r => `<button class="dc-chb ${r[0] === room ? 'on' : ''}" data-r="${r[0]}"><span>${r[2]}</span>${esc(r[1])}</button>`).join('');
-    $('#chList').querySelectorAll('[data-r]').forEach(b => b.onclick = () => switchRoom(b.dataset.r));
-    const r = roomOf(room); $('#chName').textContent = r[2] + ' ' + r[1]; $('#chDesc').textContent = r[3];
-  }
-  function switchRoom(r) {
-    if (r === room) return;
-    room = r; window.vgChatRoom = r; lim = 40; replyTo = null; editing = null; stick = true; lastTopId = null;
-    localStorage.setItem('vg_room', r); history.replaceState(null, '', '#' + r);
-    chList(); composer(); replyBar(); sub();
-  }
-
-  /* ---- üzenetek ---- */
-  function sub() {
-    if (unsub) unsub();
-    $('#msgs').innerHTML = '<div class="dc-empty">Betöltés…</div>';
-    unsub = onSnapshot(query(collection(db, 'chatRooms', room, 'messages'), orderBy('ts', 'desc'), limit(lim)), sn => {
-      hasMore = sn.size >= lim;
-      msgs = sn.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { id: d.id, ...x, t: x.ts && x.ts.toMillis ? x.ts.toMillis() : Date.now() }; }).reverse();
-      render();
-    }, e => { $('#msgs').innerHTML = `<div class="dc-empty">Az üzenetek nem tölthetők be: ${esc(e.code || e.message)}<br><span class="small">Ellenőrizd, hogy a firestore-rules.txt szabályai fel vannak-e töltve.</span></div>`; });
-  }
-
-  function msgHtml(m, group) {
-    const mine = m.uid === me.uid, adm = isAdm(m.uid, m.name);
-    const ment = !mine && String(m.text).toLowerCase().includes('@' + me.name.toLowerCase());
-    const rxs = RX.map(([k, e]) => { const a = (m.rx && m.rx[k]) || []; return a.length ? `<button class="rx ${a.includes(me.uid) ? 'on' : ''}" data-a="rx" data-k="${k}">${e} <b>${a.length}</b></button>` : ''; }).join('');
-    const acts = `${RX.map(([k, e]) => `<button data-a="rx" data-k="${k}" title="Reakció">${e}</button>`).join('')}<i></i>
-      <button data-a="reply" title="Válasz">↩</button>
-      ${mine ? '<button data-a="edit" title="Szerkesztés">✎</button>' : ''}
-      ${admin ? `<button data-a="pin" title="${m.pin ? 'Kitűzés levétele' : 'Kitűzés'}">📌</button>` : ''}
-      ${admin && !mine && !adm ? '<button data-a="mute" title="Némítás">🔇</button>' : ''}
-      ${mine || admin ? '<button data-a="del" title="Törlés">🗑</button>' : ''}`;
-    const body = editing === m.id
-      ? `<div class="dc-edit"><textarea id="edTa" maxlength="1000">${esc(editDraft)}</textarea><div class="row"><button class="btn sm" data-a="edsave">Mentés</button><button class="btn sm ghost" data-a="edcancel">Mégse</button><small>Enter: mentés · Esc: mégse</small></div></div>`
-      : `<div class="dc-tx">${fmt(m.text)}${m.edited ? ' <small class="ed">(szerkesztve)</small>' : ''}</div>`;
-    return `<div class="dc-m ${group ? 'grp' : ''} ${mine ? 'mine' : ''} ${ment ? 'ment' : ''} ${m.pin ? 'pinned' : ''}" data-id="${m.id}" data-uid="${esc(m.uid)}" data-name="${esc(m.name)}">
-      ${group ? `<span class="dc-gt">${hhmm(m.t)}</span>` : av(m.name, adm, m.uid)}
-      <div class="dc-b">
-        ${group ? '' : `<div class="dc-hd"><b class="nm ${adm ? 'adm' : (uMap[m.uid] && uMap[m.uid].vip) ? 'vip' : ''}">${esc(m.name)}</b>${!adm && uMap[m.uid] && uMap[m.uid].vip ? '<i class="bdg vipb">★ VIP</i>' : ''}${adm ? '<i class="bdg">ADMIN</i>' : ''}<time>${hhmm(m.t)}</time>${m.pin ? '<span class="pn">📌</span>' : ''}</div>`}
-        ${m.rp ? `<div class="dc-rq" data-a="goto" data-id="${esc(m.rp.id)}">↪ <b>${esc(m.rp.name)}</b> ${esc(m.rp.text)}</div>` : ''}
-        ${body}${rxs ? `<div class="dc-rx">${rxs}</div>` : ''}
-      </div>
-      ${editing === m.id ? '' : `<div class="dc-act">${acts}</div>`}</div>`;
-  }
-
-  function render() {
-    const box = $('#msgs');
-    const near = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
-    const wantBottom = stick || near;
-    const fromBottom = box.scrollHeight - box.scrollTop;
-    let html = hasMore ? '<button class="dc-more" id="moreBtn">Korábbi üzenetek betöltése</button>' : '', last = null, lastDay = '';
-    if (!msgs.length) html += `<div class="dc-empty"><div class="big">${roomOf(room)[2]}</div><b>#${esc(roomOf(room)[1])}</b><br>Itt még nincs üzenet. Írj elsőként!</div>`;
-    msgs.forEach(m => {
-      const day = ymd(new Date(m.t));
-      if (day !== lastDay) { html += `<div class="dc-day"><span>${esc(dayLabel(day))}</span></div>`; lastDay = day; last = null; }
-      const group = !!(last && last.uid === m.uid && m.t - last.t < 5 * 60e3 && !m.rp && editing !== m.id && !last.pin);
-      html += msgHtml(m, group); last = m;
-    });
-    box.innerHTML = html;
-    if (wantBottom) box.scrollTop = box.scrollHeight; else box.scrollTop = box.scrollHeight - fromBottom;
-    const top = msgs.length ? msgs[msgs.length - 1].id : null;
-    if (!wantBottom && top && top !== lastTopId && msgs[msgs.length - 1].uid !== me.uid) $('#newBtn').hidden = false;
-    if (wantBottom) $('#newBtn').hidden = true;
-    lastTopId = top; stick = false;
-    const mb = $('#moreBtn'); if (mb) mb.onclick = () => { lim += 40; sub(); };
-    const ed = $('#edTa'); if (ed) { ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); ed.oninput = () => { editDraft = ed.value; }; ed.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') { editing = null; render(); } }; }
-    pinBar(); markRead();
-  }
-
-  function pinBar() {
-    const p = [...msgs].reverse().find(m => m.pin), b = $('#pinBar');
-    if (!p) { b.hidden = true; return; }
-    b.hidden = false; b.innerHTML = `<span>📌</span><div><b>${esc(p.name)}</b> ${esc(String(p.text).slice(0, 140))}</div>`;
-    b.onclick = () => { const el = $('#msgs').querySelector(`[data-id="${p.id}"]`); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); } };
-  }
-
-  async function saveEdit() {
-    const t = editDraft.trim(), id = editing; if (!id) return;
-    if (!t) { toast('Az üzenet nem lehet üres.', 'err'); return; }
-    try { await updateDoc(doc(db, 'chatRooms', room, 'messages', id), { text: t.slice(0, 1000), edited: true }); editing = null; } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
-  }
-
-  $('#msgs').addEventListener('click', async e => {
-    const bt = e.target.closest('[data-a]'), row = e.target.closest('.dc-m');
-    if (!bt) { if (row && !e.target.closest('a,textarea')) { const was = row.classList.contains('sel'); $('#msgs').querySelectorAll('.dc-m.sel').forEach(x => x.classList.remove('sel')); if (!was) row.classList.add('sel'); } return; }
-    const a = bt.dataset.a; if (a === 'goto') { const el = $('#msgs').querySelector(`[data-id="${bt.dataset.id}"]`); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); } return; }
-    if (a === 'edsave') return saveEdit();
-    if (a === 'edcancel') { editing = null; return render(); }
-    if (!row) return;
-    const m = msgs.find(x => x.id === row.dataset.id); if (!m) return;
-    const ref = doc(db, 'chatRooms', room, 'messages', m.id);
-    try {
-      if (a === 'rx') { const has = ((m.rx && m.rx[bt.dataset.k]) || []).includes(me.uid); await updateDoc(ref, { ['rx.' + bt.dataset.k]: has ? arrayRemove(me.uid) : arrayUnion(me.uid) }); }
-      else if (a === 'reply') { replyTo = { id: m.id, name: m.name, text: String(m.text).slice(0, 80) }; replyBar(); $('#ta').focus(); }
-      else if (a === 'edit') { editing = m.id; editDraft = m.text; render(); }
-      else if (a === 'pin') await updateDoc(ref, { pin: !m.pin });
-      else if (a === 'del') { if (confirm('Biztosan törlöd az üzenetet?')) await deleteDoc(ref); }
-      else if (a === 'mute') muteModal(m.uid, m.name);
-    } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
-  });
-  $('#newBtn').onclick = () => { const b = $('#msgs'); b.scrollTop = b.scrollHeight; $('#newBtn').hidden = true; };
-  $('#msgs').addEventListener('scroll', () => { const b = $('#msgs'); if (b.scrollHeight - b.scrollTop - b.clientHeight < 60) $('#newBtn').hidden = true; }, { passive: true });
-
-  /* ---- olvasottnak jelölés (a menü számlálójához) ---- */
-  function markRead() {
-    if (document.visibilityState !== 'visible' || !msgs.length) return;
-    const t = Math.max(...msgs.map(m => m.t));
-    if (t > (+localStorage.getItem('vg_read_' + room) || 0)) { localStorage.setItem('vg_read_' + room, String(t)); window.dispatchEvent(new Event('vg-read')); }
-  }
-  document.addEventListener('visibilitychange', markRead); window.addEventListener('focus', markRead);
-
-  /* ---- írás ---- */
-  function replyBar() {
-    const b = $('#replyBar');
-    if (!replyTo) { b.hidden = true; return; }
-    b.hidden = false; b.innerHTML = `<span>Válasz <b>${esc(replyTo.name)}</b> üzenetére: ${esc(replyTo.text)}</span><button type="button" id="rpX" aria-label="Mégse">✕</button>`;
-    $('#rpX').onclick = () => { replyTo = null; replyBar(); };
-  }
-  function composer() {
-    const why = blockedReason(), ta = $('#ta');
-    ta.disabled = !!why; $('#sendBtn').disabled = !!why; $('#emBtn').disabled = !!why;
-    ta.placeholder = why || 'Üzenet ide: #' + roomOf(room)[1];
-  }
-  const grow = () => { const t = $('#ta'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 140) + 'px'; };
-  async function send() {
-    const ta = $('#ta'), text = ta.value.trim();
-    if (!text || sending || blockedReason()) return;
-    if (Date.now() - lastSend < 1500) { toast('Lassabban, kérlek.', 'err'); return; }
-    sending = true; $('#sendBtn').disabled = true;
-    const data = { uid: me.uid, name: me.name, text: text.slice(0, 1000), ts: serverTimestamp(), rx: {} };
-    if (replyTo) data.rp = replyTo;
-    try {
-      await addDoc(collection(db, 'chatRooms', room, 'messages'), data);
-      lastSend = Date.now(); ta.value = ''; grow(); replyTo = null; replyBar(); stick = true;
-    } catch (x) { toast(String(x.code || '').includes('permission') ? 'Nem küldhetsz üzenetet (némítva vagy, vagy a szabályok hiányoznak).' : 'Nem sikerült: ' + (x.code || x.message), 'err'); }
-    sending = false; $('#sendBtn').disabled = !!blockedReason(); ta.focus();
-  }
-  $('#comp').onsubmit = e => { e.preventDefault(); send(); };
-  $('#ta').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
-  $('#ta').addEventListener('input', grow);
-  $('#emBtn').onclick = e => { e.stopPropagation(); $('#emoBox').hidden = !$('#emoBox').hidden; };
-  $('#emoBox').onclick = e => { const b = e.target.closest('[data-e]'); if (!b) return; const t = $('#ta'), s = t.selectionStart || t.value.length; t.value = t.value.slice(0, s) + b.dataset.e + t.value.slice(t.selectionEnd || s); t.focus(); t.selectionStart = t.selectionEnd = s + b.dataset.e.length; grow(); };
-  document.addEventListener('click', e => { const eb = $('#emoBox'); if (eb && !eb.hidden && !eb.contains(e.target) && e.target.id !== 'emBtn') eb.hidden = true; });
-
-  /* ---- némítás (admin) ---- */
-  function muteModal(uid, name) {
-    const o = document.createElement('div'); o.className = 'dc-modal';
-    o.innerHTML = `<div class="dc-mc"><h3>${esc(name)} némítása</h3><p class="small">Amíg némítva van, nem tud üzenetet írni. Az admin bármikor feloldhatja.</p>
-      <div class="row">${[['10 perc', 10], ['1 óra', 60], ['24 óra', 1440], ['Végleges', 0]].map(([l, m]) => `<button class="btn sm ghost" data-m="${m}">${l}</button>`).join('')}</div>
-      <div class="row" style="margin-top:14px"><button class="btn sm danger" id="mcX">Mégse</button></div></div>`;
-    document.body.appendChild(o);
-    o.onclick = async e => {
-      if (e.target === o || e.target.id === 'mcX') { o.remove(); return; }
-      const b = e.target.closest('[data-m]'); if (!b) return; const min = +b.dataset.m;
-      try { await setDoc(doc(db, 'chatMutes', uid), { name, until: min ? Date.now() + min * 60000 : 9e15, by: me.name, ts: Date.now() }); toast(name + ' némítva.'); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); }
-      o.remove();
-    };
-  }
-
-  /* ---- tagok ---- */
-  function members() {
-    const now = Date.now(), list = users.filter(u => !u.disabled);
-    const online = u => u.id === me.uid || (pres[u.id] && now - pres[u.id] < 660000);
-    const A = [], O = [], F = [];
-    list.forEach(u => (isAdm(u.id, u.name) ? A : online(u) ? O : F).push(u));
-    const s = (a, b) => String(a.name).localeCompare(String(b.name));
-    const item = u => { const adm = isAdm(u.id, u.name), on = online(u), mu = mutes[u.id] && mutes[u.id] > now;
-      return `<div class="mb ${on || adm && on ? '' : 'off'}"><div class="avw">${av(u.name || '?', adm, u.id)}<i class="st ${on ? 'on' : ''}"></i></div><span class="${adm ? 'adm' : u.vip ? 'vip' : ''}">${esc(u.name || '?')}${u.vip && !adm ? ' ★' : ''}</span>${mu ? '<em title="Némítva">🔇</em>' : ''}${admin && mu ? `<button class="mbx" data-um="${u.id}" title="Némítás feloldása">feloldás</button>` : ''}${admin && !mu && u.id !== me.uid && !adm ? `<button class="mbx" data-mt="${u.id}" data-n="${esc(u.name || '?')}" title="Némítás">🔇</button>` : ''}</div>`; };
-    const grp = (t, a) => a.length ? `<div class="mg">${t} — ${a.length}</div>${a.sort(s).map(item).join('')}` : '';
-    const adminsOn = A.filter(online), adminsOff = A.filter(u => !online(u));
-    $('#mem').innerHTML = grp('Adminok', [...adminsOn.sort(s), ...adminsOff.sort(s)]) + grp('Online', O) + grp('Offline', F.slice(0, 200));
-    $('#onCnt').textContent = list.filter(online).length;
-    $('#mem').querySelectorAll('[data-um]').forEach(b => b.onclick = async () => { try { await deleteDoc(doc(db, 'chatMutes', b.dataset.um)); toast('Némítás feloldva.'); } catch (x) { toast('Nem sikerült: ' + (x.code || x.message), 'err'); } });
-    $('#mem').querySelectorAll('[data-mt]').forEach(b => b.onclick = () => muteModal(b.dataset.mt, b.dataset.n));
-  }
-  $('#mbBtn').onclick = e => { e.stopPropagation(); $('#dc').classList.toggle('mem-open'); };
-  $('#dc').querySelector('.dc-main').addEventListener('click', () => $('#dc').classList.remove('mem-open'));
-
-  /* ---- élő adatok ---- */
-  onSnapshot(collection(db, 'admins'), sn => { adminUids = new Set([...sn.docs.map(d => d.id), ...(admin ? [me.uid] : [])]); render(); members(); }, () => { });
-  onSnapshot(collection(db, 'users'), sn => { users = sn.docs.map(d => ({ id: d.id, ...d.data() })); users.forEach(u => { uMap[u.id] = u; }); members(); render(); const mb = document.querySelector('.dc-me .av'); if (mb) mb.outerHTML = av(me.name, admin, me.uid); }, () => { });
-  let presT = 0, presUn = null;
-  const presSub = () => { if (presUn) presUn(); presUn = onSnapshot(query(collection(db, 'presence'), where('t', '>', Date.now() - 15 * 60e3), orderBy('t', 'desc'), limit(200)), sn => { pres = {}; sn.docs.forEach(d => { pres[d.id] = (d.data() || {}).t || 0; }); clearTimeout(presT); presT = setTimeout(members, 3000); }, () => { }); };
-  presSub(); setInterval(presSub, 12 * 60e3);   // a lekérdezés időablaka így csúszik előre
-  if (admin) onSnapshot(collection(db, 'chatMutes'), sn => { mutes = {}; sn.docs.forEach(d => { mutes[d.id] = d.data().until || 0; }); members(); }, () => { });
-  else onSnapshot(doc(db, 'chatMutes', me.uid), s => { myMute = s.exists() ? (s.data().until || 0) : 0; composer(); }, () => { });
-  setInterval(members, 60000);
-  setInterval(() => { if (myMute && myMute < Date.now() + 1000) composer(); }, 15000);
-
-  window.vgChatRoom = room;
-  chList(); composer(); replyBar(); sub();
+@media(max-width:760px){
+  .chat-wrap{padding:8px 8px 8px}
+  .dc{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:calc(100dvh - 90px);border-radius:16px}
+  .dc-side{border-right:0;border-bottom:1px solid var(--bd)}.dc-h,.dc-me{display:none}
+  .dc-ch{flex-direction:row;overflow-x:auto;padding:8px;gap:6px}.dc-chb{width:auto;white-space:nowrap;flex:none;padding:8px 14px}
+  .dc-desc{display:none}.dc-top{flex:none}.dc-top b{flex:1}
+  .dc-mem{top:auto}
+  .dc-m{padding:3px 12px}.dc-act{right:8px}
+  .dc-m .av{width:34px;height:34px}.dc-gt{width:34px}
 }
+body[data-page="chat"] .foot{display:none}
+
+.av.pic{background:#0a0d15;overflow:hidden}.av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+
+.dc-hd .nm.vip,.mb span.vip{color:#8bddff}
+.bdg.vipb{background:rgba(85,196,247,.2);border:1px solid rgba(85,196,247,.6);color:#d5f2ff}
+.mb:has(span.vip){background:linear-gradient(90deg,rgba(85,196,247,.22),rgba(85,196,247,.04));border-radius:10px}
+
+/* ===== VIP-stílus a chaten / updates oldalon ===== */
+.dc,.dc-side,.dc-main,.dc-mem,.dc-top,.dc-compw,.upd-form{border-color:#1c2b45!important}
+.dc{background:rgba(15,26,45,.78)!important;border:1px solid #1c2b45!important;border-radius:16px!important;box-shadow:none!important}
+.dc-side,.dc-mem{background:rgba(8,15,28,.7)!important}
+.dc-chb.on{background:rgba(85,196,247,.2)!important;color:#d5f2ff!important}
+.dc-chb:hover{background:rgba(85,196,247,.1)!important}
+.dc-comp textarea,.dc-edit textarea{background:#0a1424!important;border:1px solid #1c2b45!important;border-radius:12px!important}
+.dc-m.mine .dc-tx{color:#d5f2ff}
+.upd-c{border-radius:16px!important}
