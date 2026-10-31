@@ -4,11 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#04060d">
-<title>Kezdőlap | VikingGOLD</title>
+<title>VikingGOLD – Napi sporttippek, átlátható eredményekkel</title>
+<meta name="description" content="Napi tippek labdarúgásban, jégkorongban, kézilabdában, teniszben és kosárlabdában. Átlátható eredmények, találati statisztika, tippadói ranglista. Ingyenes regisztráció.">
+<link rel="canonical" href="https://vikinggoldpro.github.io/">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VikingGOLD">
+<meta property="og:locale" content="hu_HU">
+<meta property="og:title" content="VikingGOLD – Napi sporttippek, átlátható eredményekkel">
+<meta property="og:description" content="Napi tippek labdarúgásban, jégkorongban, kézilabdában, teniszben és kosárlabdában. Átlátható eredmények, találati statisztika, tippadói ranglista. Ingyenes regisztráció.">
+<meta property="og:url" content="https://vikinggoldpro.github.io/">
+<meta property="og:image" content="https://vikinggoldpro.github.io/assets/logo.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="VikingGOLD – Napi sporttippek, átlátható eredményekkel">
+<meta name="twitter:description" content="Napi tippek labdarúgásban, jégkorongban, kézilabdában, teniszben és kosárlabdában. Átlátható eredmények, találati statisztika, tippadói ranglista. Ingyenes regisztráció.">
+<meta name="twitter:image" content="https://vikinggoldpro.github.io/assets/logo.png">
 <script>if(/\.html$/.test(location.pathname))history.replaceState(null,"",location.pathname.replace(/\/index\.html$/,"/").replace(/\.html$/,"")+location.search+location.hash)</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/style.css?v=20261031a">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"VikingGOLD","url":"https://vikinggoldpro.github.io/","inLanguage":"hu"},{"@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Mi az a VikingGOLD?","acceptedAnswer":{"@type":"Answer","text":"Közösségi tippoldal: a tippadók naponta publikálnak tippeket labdarúgásban, jégkorongban, kézilabdában, teniszben és kosárlabdában, az eredményeket pedig átláthatóan, visszanézhetően gyűjtjük."}},
+{"@type":"Question","name":"Ingyenes a regisztráció?","acceptedAnswer":{"@type":"Answer","text":"Igen. A regisztráció ingyenes, utána azonnal elérhető a napi tippek listája és az összes korábbi eredmény."}},
+{"@type":"Question","name":"Garantáltan nyer egy tipp?","acceptedAnswer":{"@type":"Answer","text":"Nem. A tippek nem garantálnak nyereményt, a fogadás kockázattal jár. Csak olyan összeget tegyél fel, amit megengedhetsz magadnak."}},
+{"@type":"Question","name":"Hogyan számoljátok a találati arányt?","acceptedAnswer":{"@type":"Answer","text":"Nyert ÷ (nyert + vesztett). Az érvénytelen és a még függőben lévő tippek nem számítanak bele."}}]}]}</script>
 </head>
 <body data-page="home">
 <canvas id="fx" aria-hidden="true"></canvas>
@@ -32,18 +51,37 @@
   <div class="reveal" id="statBox"><div class="vgs vgs-x" data-wait><p class="small">Betöltés…</p></div></div>
   <h2 class="sect-t reveal"><span class="g">VIP</span> statisztika</h2>
   <div class="reveal" id="vipStatBox"><div class="vgs vgs-x"><p class="small">Betöltés…</p></div></div>
+  <h2 class="sect-t reveal">Tippadói <span class="g">ranglista</span></h2>
+  <div class="reveal" id="boardBox"><div class="vgs vgs-x"><p class="small">Betöltés…</p></div></div>
   <h2 class="sect-t reveal">Válaszd ki a <span class="g">sportágad</span></h2>
   <div class="sports" id="sportTiles"></div>
   <div class="card reveal" style="margin-top:26px">
     <h2 style="font-size:1.3rem">Aktív tagok <span class="small" id="plCount"></span></h2>
     <div class="chips" id="plist"><span class="small">Betöltés…</span></div>
   </div>
+  <h2 class="sect-t reveal">Hogyan <span class="g">működik?</span></h2>
+  <div class="how reveal">
+    <div class="how-s"><i>1</i><b>Regisztrálj ingyen</b><p>Felhasználónév, e-mail, jelszó – 1 perc az egész. A megerősítő levelet nézd meg a spam mappában is.</p></div>
+    <div class="how-s"><i>2</i><b>Nézd a napi tippeket</b><p>Minden tipp mellett ott a liga, a piac, a szorzó és a tippadó neve. Szűrhetsz sportágra, ligára, szorzóra.</p></div>
+    <div class="how-s"><i>3</i><b>Kövesd az eredményt</b><p>A végeredmény alapján a rendszer magától dönti el, hogy a tipp nyert vagy vesztett. Semmi nem tűnik el, bármikor visszanézheted.</p></div>
+  </div>
+  <h2 class="sect-t reveal">Gyakori <span class="g">kérdések</span></h2>
+  <div class="faq reveal" id="faq">
+    <details><summary>Mi az a VikingGOLD?</summary><p>Közösségi tippoldal: a tippadók naponta publikálnak tippeket labdarúgásban, jégkorongban, kézilabdában, teniszben és kosárlabdában, az eredményeket pedig átláthatóan, visszanézhetően gyűjtjük.</p></details>
+    <details><summary>Ingyenes a regisztráció?</summary><p>Igen. A regisztráció ingyenes, utána azonnal elérhető a napi tippek listája és az összes korábbi eredmény.</p></details>
+    <details><summary>Garantáltan nyer egy tipp?</summary><p>Nem. A tippek nem garantálnak nyereményt, a fogadás kockázattal jár. Csak olyan összeget tegyél fel, amit megengedhetsz magadnak. Ha úgy érzed, kicsúszik az irányítás, nézd meg a <a href="/felelos-jatek">Felelős játék</a> oldalt.</p></details>
+    <details><summary>Mit jelent a „profit egységben” és a ROI?</summary><p>Ha minden tippre 1 egységet tennél fel: a nyertes tipp a szorzó mínusz 1 egységet hoz, a vesztes −1 egységet. A ROI ennek az eredménynek a százaléka a feltett egységekhez képest. Csak a szorzóval rendelkező, lezárt tippek számítanak bele.</p></details>
+    <details><summary>Hogyan számoljátok a találati arányt?</summary><p>Nyert ÷ (nyert + vesztett). Az érvénytelen és a még függőben lévő tippek nem számítanak bele.</p></details>
+    <details><summary>Kérhetek értesítést?</summary><p>Igen. Belépés után a harang ikonnál bekapcsolhatod a böngészős értesítéseket az újdonságokról és a bejelentésekről. Az oldalt telepítheted a telefonod kezdőképernyőjére is, így alkalmazásként nyílik meg.</p></details>
+    <details><summary>Mi az a VIP Klub?</summary><p>Külön, zárt rész a kiválasztott tagoknak saját tippekkel és statisztikával. Részletekért írj privát üzenetet az <a href="/elerhetosegek">Elérhetőségek</a> oldalon.</p></details>
+    <details><summary>Hogyan érhetlek el titeket?</summary><p>Az <a href="/elerhetosegek">Elérhetőségek</a> oldalon privát üzenetet küldhetsz közvetlenül az oldalon, általában 24 órán belül válaszolunk. Facebookon és Discordon is megtalálsz minket.</p></details>
+  </div>
   <div class="banner reveal"><div><h3>Csatlakozz, és láss minden tippet</h3><p>A regisztráció ingyenes és 1 perc. Utána azonnal elérhető minden napi tipp és az összes korábbi eredmény.</p></div><div id="bnRow"></div></div>
 </section>
 </main>
 <div id="ftr"></div>
 <script src="/assets/fx.js"></script>
-<script type="module" src="/js/app.js?v=20261028d"></script>
+<script type="module" src="/js/app.js?v=20261031a"></script>
 <script>setTimeout(function(){var w=document.querySelector('#statBox [data-wait]');if(w)w.innerHTML='<div class="big">⚠️</div><p class="small" style="font-size:.95rem">A statisztika nem töltődött be. Nyomj Ctrl+F5-öt (vagy privát ablakban nyisd meg). Ha így is marad, a <b>js/app.js</b> régi verziója van feltöltve.</p>'},6000)</script>
 </body>
 </html>
