@@ -979,3 +979,79 @@ tr.vip-row{background:linear-gradient(90deg,rgba(168,85,247,.20),rgba(168,85,247
 .chip.adm i{color:#ff4d5e!important}
 .chip.vipc{border-color:rgba(251,191,36,.7)!important;background:rgba(251,191,36,.13)!important;color:#fde68a!important;box-shadow:0 0 16px -6px rgba(251,191,36,.6)!important}
 .chip.vipc i{color:#fbbf24!important}
+
+/* ===== v4 bővítések: szűrők, KPI-k, ranglista, GYIK, kalkulátor, felelős játék ===== */
+.pos{color:#4ade9a!important}.neg{color:#ff7b6b!important}
+label.fchk,.fchk{display:inline-flex;align-items:center;gap:8px;margin:0;font-weight:600;font-size:.88rem;color:var(--tx);cursor:pointer;white-space:nowrap}
+.fchk input{width:auto;height:auto;padding:0;margin:0;accent-color:var(--gold)}
+
+/* tippek: szűrősáv */
+.fbar{display:grid;grid-template-columns:minmax(180px,2fr) minmax(150px,1.3fr) minmax(90px,.6fr) minmax(90px,.6fr) auto auto auto;gap:10px;align-items:center;margin:0 0 16px}
+.fbar input,.fbar select{padding-top:10px;padding-bottom:10px;min-width:0}
+.fbar .btn{min-height:42px;white-space:nowrap}
+@media(max-width:980px){.fbar{grid-template-columns:1fr 1fr}.fbar #fq{grid-column:1/-1}.fbar .fchk,.fbar .btn{justify-self:start}}
+@media(max-width:520px){.fbar{grid-template-columns:1fr 1fr}}
+
+/* mentés-csillag a tippeken */
+.svb{background:none;border:0;padding:4px 6px;margin:0 -2px 0 0;font-size:1.25rem;line-height:1;color:var(--mu2);cursor:pointer;border-radius:8px;transition:color .15s,transform .15s}
+.svb:hover{color:var(--gold2);transform:scale(1.15)}
+.svb.on{color:#fbbf24;text-shadow:0 0 12px rgba(251,191,36,.55)}
+.svb:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+
+/* tippek: mutatók (profit, ROI, átlag szorzó, széria) */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;padding:14px 0 6px}
+.kpi{padding:12px 14px;border:1px solid var(--bd);border-radius:12px;background:rgba(255,255,255,.03)}
+.kpi b{display:block;font-size:1.35rem;line-height:1.2;font-weight:800;font-variant-numeric:tabular-nums;color:var(--tx)}
+.kpi span{display:block;font-size:.76rem;color:var(--mu);margin-top:2px}.kpi span i{font-style:normal;color:var(--mu2)}
+
+/* kezdőlap: tippadói ranglista */
+.board .btabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.btab{padding:7px 16px;border-radius:999px;border:1px solid var(--bd2);background:transparent;color:var(--mu);font:inherit;font-weight:700;font-size:.85rem;cursor:pointer;transition:.15s}
+.btab:hover{color:var(--tx);border-color:var(--gold)}
+.btab.on{background:rgba(168,85,247,.16);border-color:rgba(168,85,247,.6);color:var(--gold2)}
+.btbl{display:grid;gap:6px}
+.brow{display:grid;grid-template-columns:34px minmax(90px,1.6fr) 80px minmax(110px,1.3fr) 90px 70px;gap:10px;align-items:center;padding:11px 14px;border:1px solid var(--bd);border-radius:12px;background:rgba(255,255,255,.025);font-variant-numeric:tabular-nums;font-size:.92rem}
+.brow.bh{background:none;border:0;padding-top:0;padding-bottom:2px;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mu2)}
+.brow .bn{font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brow .bar{display:inline-block;width:56px;height:6px;border-radius:99px;background:rgba(255,255,255,.08);vertical-align:middle;margin-right:8px;overflow:hidden}
+.brow .bar u{display:block;height:100%;background:linear-gradient(90deg,var(--gold3),var(--gold2));text-decoration:none}
+@media(max-width:640px){.brow{grid-template-columns:28px 1fr 64px 64px;gap:8px;padding:10px}.brow>span:nth-child(3),.brow>span:nth-child(6){display:none}.brow .bar{display:none}}
+
+/* kezdőlap: Hogyan működik + GYIK */
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.how-s{padding:20px;border:1px solid var(--bd);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01))}
+.how-s i{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;margin-bottom:12px;font-style:normal;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--gold2),var(--gold3))}
+.how-s b{display:block;font-size:1.02rem;margin-bottom:4px}.how-s p{margin:0;font-size:.9rem;color:var(--mu)}
+@media(max-width:760px){.how{grid-template-columns:1fr}}
+.faq{display:grid;gap:10px;max-width:860px}
+.faq details{border:1px solid var(--bd);border-radius:14px;background:rgba(255,255,255,.03);transition:border-color .2s}
+.faq details[open]{border-color:rgba(168,85,247,.45);background:rgba(168,85,247,.05)}
+.faq summary{cursor:pointer;list-style:none;padding:15px 48px 15px 18px;font-weight:700;position:relative;color:var(--tx)}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:1.4rem;font-weight:500;color:var(--gold2);transition:transform .2s}
+.faq details[open] summary::after{transform:translateY(-50%) rotate(45deg)}
+.faq summary:focus-visible{outline:2px solid var(--gold2);outline-offset:2px;border-radius:12px}
+.faq details p{margin:0;padding:0 18px 16px;color:var(--mu);font-size:.93rem}
+
+/* kalkulátor */
+.calc .card{margin:0}
+.calc label{display:block;font-size:.8rem;font-weight:700;color:var(--mu);margin:12px 0 5px}
+.calc h3{font-size:1rem;margin-bottom:2px}
+.cout{margin-top:16px;padding:14px 16px;border:1px solid rgba(168,85,247,.3);border-radius:12px;background:rgba(168,85,247,.06)}
+.cr{display:flex;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:.92rem}
+.cr:last-of-type{border-bottom:0}
+.cr span{color:var(--mu)}.cr span i{font-style:normal;color:var(--mu2)}.cr b{text-align:right;font-variant-numeric:tabular-nums;color:var(--tx)}
+.cmrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}.cmrow input{flex:1}
+.cmn{flex:none;width:26px;color:var(--mu);font-weight:700;font-size:.9rem}
+.cmrow .icb,.bli .icb{flex:none;color:var(--mu2);font-size:1rem;padding:6px 8px;border-radius:8px}
+.cmrow .icb:hover,.bli .icb:hover{color:#ff7b6b;background:rgba(255,123,107,.1)}
+.blist{margin-top:14px;display:grid;gap:8px;max-height:340px;overflow:auto}
+.bli{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:rgba(255,255,255,.025);font-variant-numeric:tabular-nums}
+.bli b{display:block;font-size:.92rem}.bli small{color:var(--mu);font-size:.78rem}.bli>span{font-weight:700;font-size:.9rem}
+.bli.st-win{border-color:rgba(74,222,154,.3)}.bli.st-loss{border-color:rgba(255,123,107,.3)}
+.rules{margin:0 0 12px;padding-left:20px;color:#c3c8d6;font-size:.94rem}.rules li{margin-bottom:8px}
+@media(max-width:760px){.calc.g2,.g2.calc{grid-template-columns:1fr}}
+
+/* felelős játék */
+.rgbox{border-color:rgba(168,85,247,.45)!important;background:linear-gradient(180deg,rgba(168,85,247,.1),rgba(168,85,247,.03))!important}
+@media(max-width:560px){.calc .g3{grid-template-columns:1fr 1fr}.calc .g2{grid-template-columns:1fr}}
